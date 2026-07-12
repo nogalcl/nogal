@@ -1,0 +1,950 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum RoleName {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum FurnitureCondition {
+  EXCELLENT
+  VERY_GOOD
+  GOOD
+  RESTORED
+  FOR_RESTORATION
+}
+
+enum FurnitureStatus {
+  DRAFT
+  UNDER_REVIEW
+  PUBLISHED
+  RESERVED
+  SOLD
+  ARCHIVED
+  REJECTED
+}
+
+enum PriceType {
+  FIXED
+  OFFER
+}
+
+enum Originality {
+  ORIGINAL
+  REPRODUCTION
+}
+
+enum ShippingMethod {
+  STANDARD
+  WHITE_GLOVE
+  PICKUP_ONLY
+}
+
+/// Preparado para verificación experta/asistida por IA (ver ROADMAP.md V3).
+/// Sin lógica todavía — solo el modelo de datos.
+enum FurnitureVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  DISPUTED
+}
+
+enum FurnitureValuationStatus {
+  NONE
+  REQUESTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+}
+
+enum ValuationRequestStatus {
+  DRAFT
+  PENDING
+  IN_REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum ValuationObjective {
+  SELL
+  BUY
+  IDENTIFY
+  RESTORE
+}
+
+enum TrendCategory {
+  NEWS
+  MARKET
+  DESIGN
+  MATERIAL
+  DESIGNER
+  MANUFACTURER
+  ICONIC_PIECE
+}
+
+enum NotificationType {
+  NEW_MESSAGE
+  NEW_OFFER
+  LISTING_APPROVED
+  LISTING_REJECTED
+  VALUATION_READY
+  SYSTEM
+  NEW_FOLLOWER
+  FURNITURE_FAVORITED
+  FURNITURE_SOLD
+  MODERATION_ACTION
+}
+
+enum ReportTargetType {
+  FURNITURE
+  USER
+  STORE
+  MESSAGE
+  CONVERSATION
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+  ACTION_TAKEN
+}
+
+// ---------------------------------------------------------------------------
+// Identidad, roles y autenticación
+// ---------------------------------------------------------------------------
+
+/// Credenciales y estado de cuenta. Los datos públicos del usuario viven en Profile.
+model User {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  email           String    @unique
+  passwordHash    String
+  emailVerifiedAt DateTime?
+
+  roleId String @db.Uuid
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  profile Profile?
+  store   Store?
+
+  refreshTokens           RefreshToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+
+  favorites          Favorite[]
+  buyerConversations Conversation[]     @relation("ConversationBuyer")
+  sentMessages       Message[]          @relation("MessageSender")
+  valuationRequests  ValuationRequest[] @relation("ValuationRequester")
+  valuationsAssigned ValuationRequest[] @relation("ValuationAssignedExpert")
+  valuationComments  ValuationComment[] @relation("ValuationCommentAuthor")
+  valuationsHandled  ValuationReport[]  @relation("ValuationExpert")
+  reportsFiled       Report[]           @relation("ReportReporter")
+  reportsResolved    Report[]           @relation("ReportResolver")
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+  furnitureVerified  Furniture[]        @relation("FurnitureVerifiedBy")
+
+  // Grafo social: un Follow conecta a un follower con la cuenta seguida.
+  // Seguir una tienda equivale a seguir la cuenta de su dueño (ver comentario
+  // en Store) — no existe un grafo de follows paralelo por tienda.
+  following Follow[] @relation("Follower")
+  followers Follow[] @relation("Following")
+
+  blocking  Block[] @relation("Blocker")
+  blockedBy Block[] @relation("Blocked")
+
+  collections Collection[]
+
+  // Soft delete: una cuenta puede quedar suspendida/borrada sin perder el
+  // historial de conversaciones, reportes y auditoría que la referencian.
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([roleId])
+}
+
+/// Datos públicos y de contacto del usuario. Separado de User para no mezclar
+/// credenciales (superficie de seguridad) con datos de perfil editables.
+model Profile {
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @unique @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName String
+  lastName  String
+  username  String  @unique
+  avatarUrl String?
+  bio       String?
+  phone     String?
+
+  countryId String?  @db.Uuid
+  country   Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  region    String?
+  city      String?
+
+  // Contadores denormalizados de solo lectura, mantenidos por la capa de
+  // aplicación en la misma transacción que la acción que los modifica
+  // (seguir/dejar de seguir, favoritear). listingsCount y salesCount se
+  // calculan en cambio en vivo desde Furniture (fuente de verdad ya real
+  // desde Sprint 4/5), para no arrastrar un contador duplicado que pueda
+  // desincronizarse.
+  reputation     Int @default(0)
+  favoritesCount Int @default(0)
+  followersCount Int @default(0)
+  followingCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([countryId])
+}
+
+/// Tabla de roles (no enum plano) para poder anexar permisos y metadatos sin
+/// migrar el modelo de User. Las tres filas iniciales se seedan una única vez.
+model Role {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  name        RoleName @unique
+  description String?
+  permissions String[]
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RefreshToken {
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Nunca se guarda el token en claro, solo su hash — igual que la contraseña.
+  tokenHash String    @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Catálogo (taxonomías) — sin interfaz todavía, listas para el marketplace
+// ---------------------------------------------------------------------------
+
+model Category {
+  id          String     @id @default(uuid(7)) @db.Uuid
+  name        String
+  slug        String     @unique
+  description String?
+  // Cuerpo largo opcional para la ficha de Base de Conocimiento — separado
+  // de `description` (usado como copy corto / meta description) para que
+  // cada ficha pueda crecer hasta un artículo completo sin forzar ese
+  // texto a aparecer también en tarjetas y metadatos.
+  content     String?
+  parentId    String?    @db.Uuid
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+
+  furniture         Furniture[]
+  valuationRequests ValuationRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+model Material {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  name             String
+  slug             String            @unique
+  description      String?
+  content          String?
+  furniture        Furniture[]
+  valuationReports ValuationReport[]
+  trends           Trend[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model WoodType {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  name             String
+  slug             String            @unique
+  description      String?
+  content          String?
+  furniture        Furniture[]
+  valuationReports ValuationReport[]
+  trends           Trend[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Style {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  name             String
+  slug             String            @unique
+  description      String?
+  content          String?
+  furniture        Furniture[]
+  valuationReports ValuationReport[]
+  trends           Trend[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Designer {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  name             String
+  slug             String            @unique
+  bio              String?
+  content          String?
+  countryId        String?           @db.Uuid
+  country          Country?          @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  furniture        Furniture[]
+  valuationReports ValuationReport[]
+  trends           Trend[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([countryId])
+}
+
+model Manufacturer {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  name             String
+  slug             String            @unique
+  description      String?
+  content          String?
+  countryId        String?           @db.Uuid
+  country          Country?          @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  furniture        Furniture[]
+  valuationReports ValuationReport[]
+  trends           Trend[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([countryId])
+}
+
+model Country {
+  id          String  @id @default(uuid(7)) @db.Uuid
+  name        String  @unique
+  isoCode     String  @unique
+  // Slug propio (en vez de derivar de isoCode en la app) para que la URL
+  // de la ficha de país sea estable aunque cambie el criterio de slugify.
+  slug        String  @unique
+  description String?
+  content     String?
+
+  profiles          Profile[]
+  designers         Designer[]
+  manufacturers     Manufacturer[]
+  furnitureOrigin   Furniture[]    @relation("FurnitureOriginCountry")
+  furnitureLocation Furniture[]    @relation("FurnitureLocationCountry")
+  storesLocated     Store[]        @relation("StoreLocationCountry")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Década como entidad de Base de Conocimiento — Furniture.decade sigue
+/// siendo un entero simple (ver comentario ahí); esta tabla no lo reemplaza,
+/// solo permite que "años 1960" tenga una ficha propia y editable.
+model Decade {
+  id          String  @id @default(uuid(7)) @db.Uuid
+  value       Int     @unique
+  label       String
+  description String?
+  content     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Tendencias — sección editorial ("Tendencias"). Contenido gestionado hoy
+// vía seed, pero ya vive 100% en base de datos (no hardcodeado en el
+// frontend) para poder cargarse dinámicamente desde un futuro panel/CMS
+// sin cambios de arquitectura.
+// ---------------------------------------------------------------------------
+
+model Trend {
+  id       String        @id @default(uuid(7)) @db.Uuid
+  slug     String        @unique
+  title    String
+  excerpt  String
+  body     String
+  category TrendCategory
+
+  imageUrl    String
+  imageAlt    String
+  // Atribución de la fotografía (autor/licencia) — Wikimedia Commons y
+  // fuentes similares de uso libre lo exigen.
+  imageCredit String?
+
+  materialId String?   @db.Uuid
+  material   Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  woodTypeId String?   @db.Uuid
+  woodType   WoodType? @relation(fields: [woodTypeId], references: [id], onDelete: SetNull)
+
+  styleId String? @db.Uuid
+  style   Style?  @relation(fields: [styleId], references: [id], onDelete: SetNull)
+
+  designerId String?   @db.Uuid
+  designer   Designer? @relation(fields: [designerId], references: [id], onDelete: SetNull)
+
+  manufacturerId String?       @db.Uuid
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+
+  // "Fuente de la información" — obligatoria, nunca se inventa contenido.
+  sourceUrl  String
+  sourceName String
+
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([materialId])
+  @@index([woodTypeId])
+  @@index([styleId])
+  @@index([designerId])
+  @@index([manufacturerId])
+  @@index([publishedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Catálogo — piezas (sin publicaciones reales todavía, solo el modelo)
+// ---------------------------------------------------------------------------
+
+model Furniture {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  storeId String @db.Uuid
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  title       String
+  slug        String @unique
+  description String
+
+  categoryId String   @db.Uuid
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  styleId String? @db.Uuid
+  style   Style?  @relation(fields: [styleId], references: [id], onDelete: SetNull)
+
+  designerId String?   @db.Uuid
+  designer   Designer? @relation(fields: [designerId], references: [id], onDelete: SetNull)
+
+  manufacturerId String?       @db.Uuid
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+
+  originCountryId String?  @db.Uuid
+  originCountry   Country? @relation("FurnitureOriginCountry", fields: [originCountryId], references: [id], onDelete: SetNull)
+
+  // Ubicación actual de la pieza (logística/envío) — distinta del país de
+  // origen histórico, que puede ser otro (p. ej. fabricada en Dinamarca,
+  // ubicada hoy en Madrid).
+  locationCity      String?
+  locationRegion    String?
+  locationCountryId String?  @db.Uuid
+  locationCountry   Country? @relation("FurnitureLocationCountry", fields: [locationCountryId], references: [id], onDelete: SetNull)
+
+  materials Material[]
+  woodTypes WoodType[]
+
+  images          FurnitureImage[]
+  favorites       Favorite[]
+  conversations   Conversation[]
+  collectionItems CollectionItem[]
+
+  condition      FurnitureCondition
+  conditionNotes String?
+  originality    Originality        @default(ORIGINAL)
+  color          String?
+  // Década de origen (p. ej. 1960). Se modela como entero simple en lugar de
+  // una tabla propia: es un rango cerrado y ordenable, no una taxonomía con
+  // metadatos propios como Category/Style.
+  decade         Int?
+
+  widthCm  Decimal? @db.Decimal(8, 2)
+  heightCm Decimal? @db.Decimal(8, 2)
+  depthCm  Decimal? @db.Decimal(8, 2)
+  weightKg Decimal? @db.Decimal(8, 2)
+
+  // CLP no usa decimales en la práctica, pero se mantiene Decimal(12,2) por
+  // consistencia con ValuationReport y para no cerrar la puerta a otras
+  // monedas más adelante.
+  price           Decimal          @db.Decimal(12, 2)
+  currency        String           @default("CLP")
+  priceType       PriceType        @default(FIXED)
+  shippingMethods ShippingMethod[]
+
+  status          FurnitureStatus @default(DRAFT)
+  rejectionReason String?
+  viewCount       Int             @default(0)
+
+  // Preparado para valoración experta/asistida por IA — ver ROADMAP.md V3.
+  // Sin lógica de negocio todavía, solo el modelo.
+  confidenceLevel    Int?
+  verificationStatus FurnitureVerificationStatus @default(UNVERIFIED)
+  valuationStatus    FurnitureValuationStatus    @default(NONE)
+  verifiedById       String?                     @db.Uuid
+  verifiedBy         User?                       @relation("FurnitureVerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt         DateTime?
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([storeId])
+  @@index([categoryId])
+  @@index([styleId])
+  @@index([status])
+  @@index([price])
+  @@index([decade])
+  @@index([createdAt])
+  @@index([locationCountryId])
+}
+
+model FurnitureImage {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  furnitureId String    @db.Uuid
+  furniture   Furniture @relation(fields: [furnitureId], references: [id], onDelete: Cascade)
+
+  url     String
+  altText String?
+  order   Int     @default(0)
+  width   Int?
+  height  Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([furnitureId])
+}
+
+model Favorite {
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  furnitureId String    @db.Uuid
+  furniture   Furniture @relation(fields: [furnitureId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, furnitureId])
+  @@index([furnitureId])
+}
+
+// ---------------------------------------------------------------------------
+// Comunidad: seguir, bloquear, colecciones
+// ---------------------------------------------------------------------------
+
+/// Grafo social simple (una sola tabla, sin distinguir "seguir usuario" de
+/// "seguir tienda"): la tienda no tiene grafo propio, seguir una tienda es
+/// seguir a su dueño. Ver Store.owner.
+model Follow {
+  followerId String @db.Uuid
+  follower   User   @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+
+  followingId String @db.Uuid
+  following   User   @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followingId])
+}
+
+model Block {
+  blockerId String @db.Uuid
+  blocker   User   @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+
+  blockedId String @db.Uuid
+  blocked   User   @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+/// Colección de piezas. Sirve dos casos con el mismo modelo:
+/// - Personal (storeId null): tableros privados del comprador ("Mi Living",
+///   "Mid Century"...). Sin compartición todavía — solo el dueño la ve.
+/// - De tienda (storeId presente): agrupaciones públicas de merchandising
+///   que aparecen en el perfil de la tienda. ownerId sigue siendo el dueño
+///   de la tienda (toda tienda tiene exactamente un dueño-usuario).
+model Collection {
+  id      String @id @default(uuid(7)) @db.Uuid
+  ownerId String @db.Uuid
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  storeId String? @db.Uuid
+  store   Store?  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+
+  items CollectionItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([storeId])
+}
+
+model CollectionItem {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  collectionId String     @db.Uuid
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  furnitureId String    @db.Uuid
+  furniture   Furniture @relation(fields: [furnitureId], references: [id], onDelete: Cascade)
+
+  addedAt DateTime @default(now())
+
+  @@unique([collectionId, furnitureId])
+  @@index([furnitureId])
+}
+
+// ---------------------------------------------------------------------------
+// Vendedores (Ateliers/Stores) y mensajería
+// ---------------------------------------------------------------------------
+
+model Store {
+  id      String @id @default(uuid(7)) @db.Uuid
+  ownerId String @unique @db.Uuid
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  name       String
+  slug       String  @unique
+  bio        String?
+  isVerified Boolean @default(false)
+
+  logoUrl     String?
+  bannerUrl   String?
+  websiteUrl  String?
+  // Mapa flexible de red -> URL (p. ej. { "instagram": "https://..." }).
+  // Se modela como Json en lugar de columnas fijas porque el conjunto de
+  // redes soportadas puede crecer sin requerir una migración.
+  socialLinks Json?
+  // Horario semanal flexible (p. ej. { "lun_vie": "10:00-19:00" }). Igual
+  // razón que socialLinks: forma libre, sin lógica de negocio todavía.
+  schedule    Json?
+
+  locationCity      String?
+  locationRegion    String?
+  locationCountryId String?  @db.Uuid
+  locationCountry   Country? @relation("StoreLocationCountry", fields: [locationCountryId], references: [id], onDelete: SetNull)
+
+  furniture     Furniture[]
+  conversations Conversation[]
+  // Agrupaciones curadas de piezas de la tienda (merchandising). Comparten
+  // el mismo modelo Collection que las colecciones personales de un
+  // comprador — ver comentario en Collection.
+  collections   Collection[]
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([locationCountryId])
+}
+
+model Conversation {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  furnitureId String    @db.Uuid
+  furniture   Furniture @relation(fields: [furnitureId], references: [id], onDelete: Cascade)
+
+  buyerId String @db.Uuid
+  buyer   User   @relation("ConversationBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
+
+  storeId String @db.Uuid
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  status   ConversationStatus @default(OPEN)
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([furnitureId, buyerId])
+  @@index([storeId])
+}
+
+model Message {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId String @db.Uuid
+  sender   User   @relation("MessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+
+  body           String
+  // Preparado para adjuntos — sin flujo de subida todavía (ver furniture
+  // images para el patrón que seguirá cuando se implemente).
+  attachmentUrls String[] @default([])
+
+  deliveredAt DateTime?
+  readAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+}
+
+// ---------------------------------------------------------------------------
+// Valoración Express (ver landing de Sprint 1 y ROADMAP.md V3)
+// ---------------------------------------------------------------------------
+
+/// Wizard de 5 pasos (fotos, información, objetivo, resumen, pago simulado).
+/// DRAFT vive mientras el usuario completa el wizard — se crea apenas sube la
+/// primera fotografía, para tener un id al que asociar las imágenes (mismo
+/// patrón que Furniture). PENDING = pagado y en cola para un especialista.
+model ValuationRequest {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  requesterId String @db.Uuid
+  requester   User   @relation("ValuationRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+
+  // Paso 2 — Información. Todo opcional a nivel de columna porque se
+  // completa progresivamente durante el wizard; se valida como requerido
+  // en la capa de aplicación recién al enviar (ver valuation.service.ts).
+  title           String?
+  description     String?
+  categoryId      String?   @db.Uuid
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  estimatedDecade Int?
+  locationCity    String?
+
+  // Paso 3 — Objetivo.
+  objective ValuationObjective?
+
+  // Paso 1 — Fotografías.
+  images ValuationRequestImage[]
+
+  // Paso 5 — Pago (simulado). Sin pasarela real: paidAt no nulo = pagado.
+  serviceFee Decimal   @default(19990) @db.Decimal(12, 2)
+  currency   String    @default("CLP")
+  paidAt     DateTime?
+
+  status ValuationRequestStatus @default(DRAFT)
+
+  assignedExpertId String? @db.Uuid
+  assignedExpert   User?   @relation("ValuationAssignedExpert", fields: [assignedExpertId], references: [id], onDelete: SetNull)
+
+  // Notas internas del panel experto — nunca visibles para el solicitante.
+  comments ValuationComment[]
+
+  report ValuationReport?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requesterId])
+  @@index([status])
+  @@index([assignedExpertId])
+  @@index([categoryId])
+}
+
+model ValuationRequestImage {
+  id                 String           @id @default(uuid(7)) @db.Uuid
+  valuationRequestId String           @db.Uuid
+  valuationRequest   ValuationRequest @relation(fields: [valuationRequestId], references: [id], onDelete: Cascade)
+
+  url     String
+  altText String?
+  order   Int     @default(0)
+  width   Int?
+  height  Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([valuationRequestId])
+}
+
+/// Comentario interno del panel experto (asignación, contexto, dudas entre
+/// especialistas). Distinto del informe final: el comentario nunca se
+/// muestra al solicitante.
+model ValuationComment {
+  id                 String           @id @default(uuid(7)) @db.Uuid
+  valuationRequestId String           @db.Uuid
+  valuationRequest   ValuationRequest @relation(fields: [valuationRequestId], references: [id], onDelete: Cascade)
+
+  authorId String @db.Uuid
+  author   User   @relation("ValuationCommentAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  body String
+
+  createdAt DateTime @default(now())
+
+  @@index([valuationRequestId])
+}
+
+/// El informe final — ver BUSINESS_RULES.md. Reutiliza las mismas tablas de
+/// taxonomía que Furniture (Material/WoodType/Style/Designer/Manufacturer)
+/// en vez de texto libre, dejando preparado un camino futuro para crear una
+/// Furniture directamente desde un informe completado.
+model ValuationReport {
+  id        String           @id @default(uuid(7)) @db.Uuid
+  requestId String           @unique @db.Uuid
+  request   ValuationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  expertId String @db.Uuid
+  expert   User   @relation("ValuationExpert", fields: [expertId], references: [id], onDelete: Restrict)
+
+  summary                String
+  probableIdentification String?
+
+  materials Material[]
+  woodTypes WoodType[]
+
+  styleId String? @db.Uuid
+  style   Style?  @relation(fields: [styleId], references: [id], onDelete: SetNull)
+
+  decade Int?
+
+  designerId String?   @db.Uuid
+  designer   Designer? @relation(fields: [designerId], references: [id], onDelete: SetNull)
+
+  manufacturerId String?       @db.Uuid
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+
+  condition FurnitureCondition?
+
+  observations String?
+  warnings     String?
+
+  estimatedValueMin Decimal  @db.Decimal(12, 2)
+  estimatedValueMax Decimal  @db.Decimal(12, 2)
+  quickSaleValue    Decimal? @db.Decimal(12, 2)
+  idealSaleValue    Decimal? @db.Decimal(12, 2)
+  currency          String   @default("CLP")
+
+  estimatedSaleTime String?
+  tips              String?
+  // 0-100, mismo criterio que Furniture.confidenceLevel.
+  confidenceLevel   Int?
+
+  // Preparado para generación real de PDF (ver ROADMAP.md) — hoy la vista
+  // de informe es imprimible (CSS de impresión) y este campo queda listo
+  // para cuando exista un pipeline de generación server-side.
+  pdfUrl String?
+
+  providedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([styleId])
+  @@index([designerId])
+  @@index([manufacturerId])
+}
+
+// ---------------------------------------------------------------------------
+// Notificaciones, moderación y auditoría
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id     String @id @default(uuid(7)) @db.Uuid
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    NotificationType
+  payload Json
+  readAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, readAt])
+}
+
+model Report {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  reporterId String @db.Uuid
+  reporter   User   @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Restrict)
+
+  // Referencia polimórfica ligera: Prisma no soporta relaciones polimórficas
+  // nativas. targetType fija qué tabla resolver en la capa de aplicación.
+  targetType ReportTargetType
+  targetId   String           @db.Uuid
+
+  reason String
+  status ReportStatus @default(PENDING)
+
+  resolvedById String?   @db.Uuid
+  resolvedBy   User?     @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([targetType, targetId])
+  @@index([status])
+}
+
+/// Registro de auditoría — append-only, nunca se actualiza ni se borra.
+model AuditLog {
+  id      String  @id @default(uuid(7)) @db.Uuid
+  actorId String? @db.Uuid
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  action     String
+  targetType String?
+  targetId   String? @db.Uuid
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}

@@ -1,0 +1,29 @@
+{
+  "name": "nogal",
+  "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
+    "db:generate": "pnpm --filter @nogal/database db:generate",
+    "db:migrate": "pnpm --filter @nogal/database db:migrate",
+    "db:migrate:deploy": "pnpm --filter @nogal/database db:migrate:deploy",
+    "db:seed": "pnpm --filter @nogal/database db:seed",
+    "db:studio": "pnpm --filter @nogal/database db:studio"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "turbo": "^2.1.3"
+  }
+}

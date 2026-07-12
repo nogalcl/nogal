@@ -1,0 +1,120 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Los keyframes de acordeón/shimmer de "shadcn/tailwind.css" no se importan
+ * hasta que un componente los necesite realmente (p. ej. Accordion), para no
+ * arrastrar utilidades decorativas (shimmer, scroll-fade) que
+ * DESIGN_PRINCIPLES.md prohíbe explícitamente.
+ */
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+
+  --color-carbon: var(--carbon);
+  --color-espresso: var(--espresso);
+  --color-coffee: var(--coffee);
+  --color-walnut: var(--walnut);
+  --color-beige: var(--beige);
+  --color-stone: var(--stone);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 0.125rem);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 0.125rem);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+}
+
+:root {
+  /* Paleta de marca — ver DESIGN_PRINCIPLES.md. No introducir colores fuera de esta gama. */
+  --carbon: #1a1815;
+  --espresso: #2e2118;
+  --coffee: #4a3327;
+  --walnut: #6b4a34;
+  --beige: #ede4d3;
+  --stone: #8c8578;
+
+  --background: var(--beige);
+  --foreground: var(--carbon);
+  --card: #f5efe2;
+  --card-foreground: var(--carbon);
+  --popover: #f5efe2;
+  --popover-foreground: var(--carbon);
+  --primary: var(--walnut);
+  --primary-foreground: var(--beige);
+  --secondary: var(--coffee);
+  --secondary-foreground: var(--beige);
+  --muted: #e3d8c3;
+  --muted-foreground: var(--stone);
+  --accent: #ddcfb4;
+  --accent-foreground: var(--carbon);
+  --destructive: #a13b2e;
+  --destructive-foreground: var(--beige);
+  --border: color-mix(in oklch, var(--stone), transparent 65%);
+  --input: color-mix(in oklch, var(--stone), transparent 55%);
+  --ring: var(--walnut);
+
+  --radius: 0.1875rem;
+}
+
+.dark {
+  --background: var(--carbon);
+  --foreground: var(--beige);
+  --card: var(--espresso);
+  --card-foreground: var(--beige);
+  --popover: var(--espresso);
+  --popover-foreground: var(--beige);
+  --primary: #a97c58;
+  --primary-foreground: var(--carbon);
+  --secondary: var(--coffee);
+  --secondary-foreground: var(--beige);
+  --muted: var(--espresso);
+  --muted-foreground: var(--stone);
+  --accent: var(--coffee);
+  --accent-foreground: var(--beige);
+  --destructive: #c65545;
+  --destructive-foreground: var(--carbon);
+  --border: color-mix(in oklch, var(--stone), transparent 75%);
+  --input: color-mix(in oklch, var(--stone), transparent 65%);
+  --ring: #a97c58;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif;
+  }
+}
