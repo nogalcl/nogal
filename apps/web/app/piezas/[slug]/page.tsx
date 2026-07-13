@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Breadcrumbs } from "@/components/common/breadcrumbs";
 import { Container } from "@/components/layout/container";
 import { PieceGallery } from "@/components/furniture/piece-gallery";
 import { SpecList } from "@/components/furniture/spec-list";
@@ -97,7 +98,15 @@ export default async function PieceDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="grid min-w-0 gap-16 lg:grid-cols-[1.4fr_1fr]">
+      <Breadcrumbs
+        items={[
+          { label: "Inicio", href: "/" },
+          { label: "Piezas", href: "/explorar" },
+          { label: piece.title },
+        ]}
+      />
+
+      <div className="mt-8 grid min-w-0 gap-16 lg:grid-cols-[1.4fr_1fr]">
         <div className="min-w-0">
           <PieceGallery images={piece.images} title={piece.title} />
         </div>
@@ -109,13 +118,15 @@ export default async function PieceDetailPage({ params }: PageProps) {
                 {piece.category.name}
               </p>
             ) : null}
-            <h1 className="text-foreground mt-3 font-serif text-4xl">
+            <h1 className="text-foreground mt-3 font-serif text-4xl leading-tight sm:text-5xl">
               {piece.title}
             </h1>
             {byline ? (
-              <p className="text-muted-foreground mt-2 text-sm">{byline}</p>
+              <p className="text-muted-foreground mt-3 font-serif text-lg italic">
+                {byline}
+              </p>
             ) : null}
-            <p className="text-foreground mt-6 text-2xl">
+            <p className="border-border text-foreground mt-8 border-t pt-6 text-3xl tabular-nums">
               {formatPrice(piece.price, piece.currency)}
               {piece.priceType === "OFFER" ? (
                 <span className="text-muted-foreground ml-2 text-sm">

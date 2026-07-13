@@ -16,9 +16,16 @@ export function ExploreGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3 lg:grid-cols-4">
-      {items.map((piece) => (
-        <PieceCard key={piece.id} piece={piece} />
+    <div className="grid grid-cols-2 gap-x-6 gap-y-14 sm:grid-cols-3 lg:grid-cols-4">
+      {items.map((piece, index) => (
+        <PieceCard
+          key={piece.id}
+          piece={piece}
+          // Rompe la grilla uniforme cada 7 piezas con una plancha más
+          // grande — ver DESIGN_PRINCIPLES.md §5: nunca "grid de e-commerce"
+          // de cajas idénticas.
+          featured={index % 7 === 0}
+        />
       ))}
     </div>
   );
