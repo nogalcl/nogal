@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { Avatar } from "@/components/common/avatar";
-import { MessageForm } from "@/components/messaging/message-form";
+import { ConversationThread } from "@/components/messaging/conversation-thread";
 import { BlockButton } from "@/components/social/block-button";
 import { ReportButton } from "@/components/reports/report-button";
 import { fetchConversation } from "@/lib/api/messaging";
@@ -14,15 +14,6 @@ export const metadata: Metadata = { title: "Conversación" };
 
 interface PageProps {
   params: Promise<{ id: string }>;
-}
-
-function formatTimestamp(date: string): string {
-  return new Date(date).toLocaleString("es-CL", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export default async function ConversationDetailPage({ params }: PageProps) {
@@ -44,7 +35,7 @@ export default async function ConversationDetailPage({ params }: PageProps) {
         ← Mensajes
       </Link>
 
-      <div className="border-border mt-6 flex items-center justify-between gap-4 border-b pb-6">
+      <div className="border-border mt-8 flex items-center justify-between gap-4 border-b pb-8">
         <div className="flex items-center gap-4">
           <Avatar
             name={name}
@@ -54,7 +45,7 @@ export default async function ConversationDetailPage({ params }: PageProps) {
           <div>
             <Link
               href={`/perfil/${conversation.counterpart.username}`}
-              className="text-foreground text-base hover:underline"
+              className="text-foreground font-serif text-xl hover:underline"
             >
               {name}
             </Link>
@@ -79,26 +70,10 @@ export default async function ConversationDetailPage({ params }: PageProps) {
         ) : null}
       </div>
 
-      <div className="mt-10 flex flex-col gap-8">
-        {conversation.messages.map((message) => (
-          <div
-            key={message.id}
-            className={message.isMine ? "text-right" : "text-left"}
-          >
-            <p className="text-muted-foreground text-xs">
-              {message.isMine ? "Tú" : name} · {formatTimestamp(message.createdAt)}
-              {message.isMine ? (message.read ? " · Leído" : " · Enviado") : ""}
-            </p>
-            <p className="text-foreground mt-2 inline-block max-w-lg text-left text-base leading-relaxed">
-              {message.body}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-10">
-        <MessageForm conversationId={conversation.id} />
-      </div>
+      <ConversationThread
+        initialConversation={conversation}
+        counterpartName={name}
+      />
 
       <div className="border-border mt-16 flex items-center gap-6 border-t pt-6">
         <BlockButton userId={conversation.counterpart.id} />

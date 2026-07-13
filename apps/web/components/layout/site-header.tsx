@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Heart, Menu, MessageCircle, Search, User } from "lucide-react";
 
@@ -16,6 +15,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useNavCounts } from "@/lib/hooks/use-nav-counts";
 import { siteConfig } from "@/lib/site";
 
 const primaryNav = [
@@ -39,26 +39,11 @@ function NavBadge({ count }: { count: number }) {
  * hidratar (ver /api/nav-counts) en vez de leer cookies aquí o en el layout
  * raíz — así la home y el resto de páginas estáticas no se vuelven
  * dinámicas solo por mostrar un badge. Ver middleware.ts para el resto del
- * enrutado consciente de sesión.
+ * enrutado consciente de sesión. useNavCounts sondea periódicamente (ver
+ * ese hook y MessageNotifier) para que el badge se sienta "en vivo".
  */
 export function SiteHeader() {
-  const [counts, setCounts] = useState({
-    unreadNotifications: 0,
-    unreadMessages: 0,
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/nav-counts")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled) setCounts(data);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const counts = useNavCounts();
 
   return (
     <header className="border-border bg-background sticky top-0 z-40 border-b">

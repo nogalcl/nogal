@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { MessageNotifier } from "@/components/messaging/message-notifier";
 import { fontSans, fontSerif } from "@/lib/fonts";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ export default function RootLayout({
           <SiteHeader />
           <main className="flex-1">{children}</main>
           <SiteFooter />
+          <MessageNotifier />
         </ThemeProvider>
       </body>
     </html>

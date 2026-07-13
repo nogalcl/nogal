@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { sendMessageAction } from "@/lib/messaging/actions";
 
-export function MessageForm({ conversationId }: { conversationId: string }) {
+export function MessageForm({
+  conversationId,
+  onSent,
+}: {
+  conversationId: string;
+  onSent?: () => void;
+}) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -20,6 +26,7 @@ export function MessageForm({ conversationId }: { conversationId: string }) {
         setError(result.error);
       } else {
         formRef.current?.reset();
+        onSent?.();
       }
     });
   }
