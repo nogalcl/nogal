@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -56,28 +56,6 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
       ? mapFurnitureToFormValues(furniture)
       : emptyFurnitureFormValues,
   });
-
-  const topCategories = useMemo(
-    () => taxonomy.categories.filter((category) => !category.parentId),
-    [taxonomy.categories],
-  );
-
-  const initialTopCategoryId = useMemo(() => {
-    if (!furniture) return "";
-    const current = taxonomy.categories.find(
-      (c) => c.id === furniture.category.id,
-    );
-    return current?.parentId ?? current?.id ?? "";
-  }, [furniture, taxonomy.categories]);
-
-  const [topCategoryId, setTopCategoryId] = useState(initialTopCategoryId);
-  const subCategories = useMemo(
-    () =>
-      taxonomy.categories.filter(
-        (category) => category.parentId === topCategoryId,
-      ),
-    [taxonomy.categories, topCategoryId],
-  );
 
   const categoryId = watch("categoryId");
   // categoryId no se llena con un <input> nativo (se controla a mano desde
@@ -176,36 +154,20 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
           ) : null}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <SelectField
-            label="Categoría *"
-            value={topCategoryId}
-            onChange={(value) => {
-              setTopCategoryId(value);
-              setValue("categoryId", value, {
-                shouldDirty: true,
-                shouldValidate: true,
-              });
-            }}
-            options={topCategories.map((c) => ({ value: c.id, label: c.name }))}
-          />
-          <SelectField
-            label="Subcategoría"
-            value={categoryId === topCategoryId ? "" : categoryId}
-            onChange={(value) =>
-              setValue("categoryId", value || topCategoryId, {
-                shouldValidate: true,
-              })
-            }
-            options={subCategories.map((c) => ({ value: c.id, label: c.name }))}
-            placeholder={
-              subCategories.length
-                ? "Selecciona una opción"
-                : "Sin subcategorías"
-            }
-            disabled={subCategories.length === 0}
-          />
-        </div>
+        <SelectField
+          label="Categoría *"
+          value={categoryId}
+          onChange={(value) =>
+            setValue("categoryId", value, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+          options={taxonomy.categories.map((c) => ({
+            value: c.id,
+            label: c.name,
+          }))}
+        />
         {errors.categoryId ? (
           <p className="text-destructive text-xs">
             {errors.categoryId.message}
