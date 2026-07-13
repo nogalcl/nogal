@@ -27,6 +27,7 @@ import { FormField } from "@/components/forms/form-field";
 import { GeolocateCityButton } from "./geolocate-city-button";
 import { ImageManager } from "./image-manager";
 import { PhotoPicker } from "./photo-picker";
+import { PriceInput } from "./price-input";
 import { SelectField } from "./select-field";
 
 interface FurnitureFormProps {
@@ -194,11 +195,16 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
           Precio y estado
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
-          <FormField
-            label="Precio (CLP)"
-            type="number"
-            step="1"
-            {...register("price", { valueAsNumber: true })}
+          <Controller
+            control={control}
+            name="price"
+            render={({ field }) => (
+              <PriceInput
+                label="Precio (CLP)"
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
           />
           <Controller
             control={control}
