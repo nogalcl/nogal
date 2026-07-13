@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { PieceActions } from "@/components/furniture/piece-actions";
@@ -16,8 +15,6 @@ export const metadata: Metadata = { title: "Mis piezas" };
 export default async function MyPiecesPage() {
   const accessToken = (await getAccessToken()) as string;
   const store = await fetchMyStore(accessToken);
-  if (!store) redirect("/vender");
-
   const pieces = await fetchMyFurniture(accessToken);
 
   return (

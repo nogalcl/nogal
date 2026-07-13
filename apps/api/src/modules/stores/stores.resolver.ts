@@ -13,11 +13,11 @@ import { StoresService } from "./stores.service";
 export class StoresResolver {
   constructor(private readonly storesService: StoresService) {}
 
-  @Query(() => StoreEntity, { nullable: true })
+  @Query(() => StoreEntity)
   async myStore(
     @CurrentUser() authUser: AuthTokenPayload,
-  ): Promise<StoreEntity | null> {
-    return this.storesService.findByOwnerId(authUser.sub);
+  ): Promise<StoreEntity> {
+    return this.storesService.ensureForOwner(authUser.sub);
   }
 
   @Public()

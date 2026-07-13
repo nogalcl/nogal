@@ -142,12 +142,9 @@ export class FurnitureService {
     userId: string,
     input: CreateFurnitureInput,
   ): Promise<FurnitureWithRelations> {
-    const store = await this.storesService.findByOwnerId(userId);
-    if (!store) {
-      throw new ForbiddenException(
-        "Necesitas crear tu atelier antes de añadir piezas.",
-      );
-    }
+    // Todo usuario tiene un atelier implícito (ver StoresService.ensureForOwner)
+    // — nunca debería hacer falta un paso previo explícito para publicar.
+    const store = await this.storesService.ensureForOwner(userId);
 
     const slug = await generateUniqueSlug(input.title, (candidate) =>
       this.repo.slugExists(candidate),

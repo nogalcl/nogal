@@ -23,10 +23,8 @@ import {
   uploadFurnitureImageAction,
 } from "@/lib/furniture/actions";
 import type { FurnitureImage } from "@/lib/api/types";
+import { MAX_IMAGES, MIN_IMAGES_TO_PUBLISH } from "@/lib/furniture/constants";
 import { SortableImage } from "./sortable-image";
-
-const MIN_IMAGES_TO_PUBLISH = 6;
-const MAX_IMAGES = 20;
 
 interface ImageManagerProps {
   furnitureId: string;

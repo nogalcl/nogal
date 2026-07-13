@@ -18,7 +18,6 @@ import {
   unpublishFurniture,
   updateFurniture,
 } from "@/lib/api/furniture";
-import { createStore } from "@/lib/api/stores";
 import { getAccessToken } from "@/lib/auth/session";
 import type { FurnitureFormValues } from "./types";
 
@@ -63,17 +62,6 @@ async function requireAccessToken(): Promise<string> {
   const token = await getAccessToken();
   if (!token) throw new Error("NO_SESSION");
   return token;
-}
-
-export async function ensureStoreAction(name: string): Promise<ActionResult> {
-  try {
-    const token = await requireAccessToken();
-    const store = await createStore(token, name);
-    revalidatePath("/vender");
-    return { success: true, id: store.id };
-  } catch (error) {
-    return { error: extractErrorMessage(error) };
-  }
 }
 
 export async function createFurnitureAction(

@@ -1,3 +1,9 @@
+// El backend exige este mínimo para pasar de DRAFT a revisión (ver
+// MIN_IMAGES_TO_PUBLISH en apps/api/.../furniture.validation.ts) — se
+// duplica aquí solo como valor de referencia para la UI, no como validación.
+export const MIN_IMAGES_TO_PUBLISH = 6;
+export const MAX_IMAGES = 20;
+
 export const CONDITION_OPTIONS = [
   { value: "EXCELLENT", label: "Excelente" },
   { value: "VERY_GOOD", label: "Muy bueno" },

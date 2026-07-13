@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
-import { StoreOnboardingForm } from "@/components/furniture/store-onboarding-form";
 import { fetchMyFurniture } from "@/lib/api/furniture";
 import { fetchMyStore } from "@/lib/api/stores";
 import { getAccessToken } from "@/lib/auth/session";
@@ -13,29 +12,6 @@ export const metadata: Metadata = { title: "Vender" };
 export default async function SellPage() {
   const accessToken = (await getAccessToken()) as string;
   const store = await fetchMyStore(accessToken);
-
-  if (!store) {
-    return (
-      <Container className="py-20">
-        <div className="max-w-lg">
-          <p className="text-muted-foreground text-sm uppercase tracking-widest">
-            Vender
-          </p>
-          <h1 className="text-foreground mt-3 text-3xl">
-            Antes de publicar, crea tu atelier
-          </h1>
-          <p className="text-muted-foreground mt-4 text-sm">
-            Tu atelier es tu perfil de vendedor en Nogal — el nombre bajo el que
-            se muestran tus piezas.
-          </p>
-          <div className="mt-10">
-            <StoreOnboardingForm />
-          </div>
-        </div>
-      </Container>
-    );
-  }
-
   const pieces = await fetchMyFurniture(accessToken);
   const counts = pieces.reduce<Record<string, number>>((acc, piece) => {
     acc[piece.status] = (acc[piece.status] ?? 0) + 1;

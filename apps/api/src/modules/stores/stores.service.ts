@@ -63,6 +63,40 @@ export class StoresService {
     return store ? this.toEntity(store) : null;
   }
 
+  /**
+   * Todo usuario puede vender sin pasar por un formulario de registro de
+   * atelier: si aún no tiene uno, se le crea automáticamente con su nombre
+   * de perfil. El usuario puede editarlo luego (nombre público, bio, etc.)
+   * desde el propio atelier — no es una decisión permanente.
+   */
+  async ensureForOwner(ownerId: string): Promise<StoreEntity> {
+    const existing = await this.findByOwnerId(ownerId);
+    if (existing) return existing;
+
+    const user = await this.prisma.client.user.findUniqueOrThrow({
+      where: { id: ownerId },
+      include: { profile: true },
+    });
+    const profile = user.profile;
+    const fullName = profile
+      ? `${profile.firstName} ${profile.lastName}`.trim()
+      : "";
+    const name = fullName || profile?.username || "Mi atelier";
+
+    const slug = await generateUniqueSlug(name, async (candidate) => {
+      const found = await this.prisma.client.store.findUnique({
+        where: { slug: candidate },
+      });
+      return Boolean(found);
+    });
+
+    const created = await this.prisma.client.store.create({
+      data: { ownerId, name, slug },
+      include: storeInclude,
+    });
+    return this.toEntity(created);
+  }
+
   /** Fila cruda de Prisma (sin mapear) — usada internamente por otros módulos que solo necesitan id/ownerId. */
   findById(id: string): Promise<Store | null> {
     return this.prisma.client.store.findUnique({

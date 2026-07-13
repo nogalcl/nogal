@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { FurnitureForm } from "@/components/furniture/furniture-form";
 import { fetchTaxonomyOptions } from "@/lib/api/taxonomy";
@@ -11,8 +10,6 @@ export const metadata: Metadata = { title: "Añadir pieza" };
 export default async function NewPiecePage() {
   const accessToken = (await getAccessToken()) as string;
   const store = await fetchMyStore(accessToken);
-  if (!store) redirect("/vender");
-
   const taxonomy = await fetchTaxonomyOptions();
 
   return (
@@ -23,8 +20,8 @@ export default async function NewPiecePage() {
         </p>
         <h1 className="text-foreground mt-3 text-3xl">Añadir una pieza</h1>
         <p className="text-muted-foreground mt-4 text-sm">
-          Completa la información básica y guarda para continuar con las
-          fotografías.
+          Añade fotos y los datos esenciales — el resto es opcional y puedes
+          completarlo después.
         </p>
 
         <div className="mt-14">
