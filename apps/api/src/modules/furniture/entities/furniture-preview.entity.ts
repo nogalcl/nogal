@@ -28,8 +28,8 @@ export class FurniturePreviewEntity {
   @Field()
   slug!: string;
 
-  @Field(() => Float)
-  price!: number;
+  @Field(() => Float, { nullable: true })
+  price?: number | null;
 
   @Field()
   currency!: string;
@@ -37,8 +37,8 @@ export class FurniturePreviewEntity {
   @Field(() => Int, { nullable: true })
   decade?: number | null;
 
-  @Field(() => FurnitureCondition)
-  condition!: FurnitureCondition;
+  @Field(() => FurnitureCondition, { nullable: true })
+  condition?: FurnitureCondition | null;
 
   @Field(() => String, { nullable: true })
   locationCity?: string | null;

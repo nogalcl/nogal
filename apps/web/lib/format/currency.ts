@@ -4,7 +4,11 @@
  * el futuro se soportan otras monedas con decimales (ver Furniture.currency
  * en el schema).
  */
-export function formatPrice(amount: number, currency: string): string {
+export function formatPrice(
+  amount: number | null,
+  currency: string,
+): string {
+  if (amount == null) return "Precio a consultar";
   try {
     return new Intl.NumberFormat("es-CL", {
       style: "currency",

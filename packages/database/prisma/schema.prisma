@@ -471,8 +471,8 @@ model Furniture {
   slug        String @unique
   description String
 
-  categoryId String   @db.Uuid
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  categoryId String?   @db.Uuid
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   styleId String? @db.Uuid
   style   Style?  @relation(fields: [styleId], references: [id], onDelete: SetNull)
@@ -502,7 +502,7 @@ model Furniture {
   conversations   Conversation[]
   collectionItems CollectionItem[]
 
-  condition      FurnitureCondition
+  condition      FurnitureCondition?
   conditionNotes String?
   originality    Originality        @default(ORIGINAL)
   color          String?
@@ -519,7 +519,7 @@ model Furniture {
   // CLP no usa decimales en la práctica, pero se mantiene Decimal(12,2) por
   // consistencia con ValuationReport y para no cerrar la puerta a otras
   // monedas más adelante.
-  price           Decimal          @db.Decimal(12, 2)
+  price           Decimal?         @db.Decimal(12, 2)
   currency        String           @default("CLP")
   priceType       PriceType        @default(FIXED)
   shippingMethods ShippingMethod[]

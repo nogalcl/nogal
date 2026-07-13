@@ -8,7 +8,6 @@ import {
   IsPositive,
   IsString,
   IsUUID,
-  Matches,
   Max,
   MaxLength,
   Min,
@@ -18,7 +17,6 @@ import {
   FurnitureCondition,
   Originality,
   PriceType,
-  ShippingMethod,
 } from "@/common/graphql/furniture-enums";
 
 const CURRENT_DECADE_CEILING = Math.ceil(new Date().getFullYear() / 10) * 10;
@@ -39,9 +37,10 @@ export class CreateFurnitureInput {
   @MaxLength(4000)
   description!: string;
 
-  @Field()
+  @Field(() => String, { nullable: true })
+  @IsOptional()
   @IsUUID()
-  categoryId!: string;
+  categoryId?: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
@@ -77,9 +76,10 @@ export class CreateFurnitureInput {
   @IsUUID(undefined, { each: true })
   woodTypeIds?: string[];
 
-  @Field(() => FurnitureCondition)
+  @Field(() => FurnitureCondition, { nullable: true })
+  @IsOptional()
   @IsEnum(FurnitureCondition)
-  condition!: FurnitureCondition;
+  condition?: FurnitureCondition;
 
   @Field(() => String, { nullable: true })
   @IsOptional()
@@ -129,35 +129,25 @@ export class CreateFurnitureInput {
   @Max(2000)
   weightKg?: number;
 
-  @Field(() => Float)
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
   @IsPositive({ message: "El precio debe ser mayor que cero." })
   @Max(10_000_000)
-  price!: number;
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
-  @IsString()
-  @Matches(/^[A-Z]{3}$/, {
-    message: "La moneda debe ser un código ISO de 3 letras (p. ej. EUR).",
-  })
-  currency?: string;
+  price?: number;
 
   @Field(() => PriceType, { nullable: true })
   @IsOptional()
   @IsEnum(PriceType)
   priceType?: PriceType;
 
-  @Field(() => [ShippingMethod], { nullable: true })
-  @IsOptional()
-  @IsArray()
-  @IsEnum(ShippingMethod, { each: true })
-  shippingMethods?: ShippingMethod[];
-
-  @Field(() => String, { nullable: true })
-  @IsOptional()
+  // Nogal opera solo en Chile: la ciudad es el único dato de ubicación que
+  // pedimos, y es obligatorio (ver furniture-form.tsx, ya no hay selector
+  // de país ni de método de envío — el retiro en persona es el único).
+  @Field()
   @IsString()
+  @MinLength(1, { message: "La ciudad es obligatoria." })
   @MaxLength(120)
-  locationCity?: string;
+  locationCity!: string;
 
   @Field(() => String, { nullable: true })
   @IsOptional()

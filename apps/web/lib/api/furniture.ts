@@ -148,14 +148,14 @@ const UPDATE_FURNITURE_MUTATION = gql`
 export type FurnitureInput = {
   title: string;
   description: string;
-  categoryId: string;
+  categoryId?: string;
   styleId?: string;
   designerId?: string;
   manufacturerId?: string;
   originCountryId?: string;
   materialIds?: string[];
   woodTypeIds?: string[];
-  condition: string;
+  condition?: string;
   conditionNotes?: string;
   originality?: string;
   color?: string;
@@ -164,13 +164,10 @@ export type FurnitureInput = {
   heightCm?: number;
   depthCm?: number;
   weightKg?: number;
-  price: number;
-  currency?: string;
+  price?: number;
   priceType?: string;
-  shippingMethods?: string[];
-  locationCity?: string;
+  locationCity: string;
   locationRegion?: string;
-  locationCountryId?: string;
 };
 
 export async function fetchFurnitureBySlug(

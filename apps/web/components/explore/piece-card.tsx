@@ -12,6 +12,13 @@ export function PieceCard({ piece }: { piece: FurniturePreview }) {
     .filter(Boolean)
     .join(" · ");
 
+  const conditionAndLocation = [
+    piece.condition ? CONDITION_LABELS[piece.condition] : null,
+    piece.locationCity,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <Link href={`/piezas/${piece.slug}`} className="group flex flex-col gap-3">
       <div className="aspect-4/5 border-border bg-muted relative w-full overflow-hidden border">
@@ -35,10 +42,11 @@ export function PieceCard({ piece }: { piece: FurniturePreview }) {
         {meta ? (
           <p className="text-muted-foreground mt-1 text-sm">{meta}</p>
         ) : null}
-        <p className="text-muted-foreground mt-1 text-sm">
-          {CONDITION_LABELS[piece.condition]}
-          {piece.locationCity ? ` · ${piece.locationCity}` : ""}
-        </p>
+        {conditionAndLocation ? (
+          <p className="text-muted-foreground mt-1 text-sm">
+            {conditionAndLocation}
+          </p>
+        ) : null}
         <p className="text-foreground mt-2 text-base">
           {formatPrice(piece.price, piece.currency)}
         </p>

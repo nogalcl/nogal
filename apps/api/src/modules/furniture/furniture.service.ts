@@ -8,6 +8,7 @@ import {
 import {
   FurnitureSort,
   FurnitureStatus,
+  ShippingMethod,
 } from "@/common/graphql/furniture-enums";
 import { generateUniqueSlug } from "@/common/utils/slug";
 import {
@@ -154,12 +155,12 @@ export class FurnitureService {
       ...this.buildScalarData(input),
       title: input.title,
       description: input.description,
-      condition: input.condition,
-      price: input.price,
       slug,
       status: FurnitureStatus.DRAFT,
+      currency: "CLP",
+      shippingMethods: [ShippingMethod.PICKUP_ONLY],
       store: { connect: { id: store.id } },
-      category: { connect: { id: input.categoryId } },
+      category: connectOptional(input.categoryId),
       style: connectOptional(input.styleId),
       designer: connectOptional(input.designerId),
       manufacturer: connectOptional(input.manufacturerId),
@@ -185,6 +186,8 @@ export class FurnitureService {
       ...(wasRejected
         ? { status: FurnitureStatus.DRAFT, rejectionReason: null }
         : {}),
+      currency: "CLP",
+      shippingMethods: [ShippingMethod.PICKUP_ONLY],
       category: input.categoryId
         ? { connect: { id: input.categoryId } }
         : undefined,
@@ -234,7 +237,7 @@ export class FurnitureService {
       description: original.description,
       status: FurnitureStatus.DRAFT,
       store: { connect: { id: original.storeId } },
-      category: { connect: { id: original.categoryId } },
+      category: connectOptional(original.categoryId ?? undefined),
       style: connectOptional(original.styleId ?? undefined),
       designer: connectOptional(original.designerId ?? undefined),
       manufacturer: connectOptional(original.manufacturerId ?? undefined),
@@ -252,9 +255,9 @@ export class FurnitureService {
       depthCm: original.depthCm,
       weightKg: original.weightKg,
       price: original.price,
-      currency: original.currency,
+      currency: "CLP",
       priceType: original.priceType,
-      shippingMethods: original.shippingMethods,
+      shippingMethods: [ShippingMethod.PICKUP_ONLY],
       locationCity: original.locationCity,
       locationRegion: original.locationRegion,
       images: {
@@ -525,10 +528,7 @@ export class FurnitureService {
     if (input.depthCm !== undefined) data.depthCm = input.depthCm;
     if (input.weightKg !== undefined) data.weightKg = input.weightKg;
     if (input.price !== undefined) data.price = input.price;
-    if (input.currency !== undefined) data.currency = input.currency;
     if (input.priceType !== undefined) data.priceType = input.priceType;
-    if (input.shippingMethods !== undefined)
-      data.shippingMethods = input.shippingMethods;
     if (input.locationCity !== undefined)
       data.locationCity = input.locationCity;
     if (input.locationRegion !== undefined)
@@ -551,9 +551,7 @@ interface FurnitureScalarData {
   depthCm?: number;
   weightKg?: number;
   price?: number;
-  currency?: string;
   priceType?: CreateFurnitureInput["priceType"];
-  shippingMethods?: CreateFurnitureInput["shippingMethods"];
   locationCity?: string;
   locationRegion?: string;
 }

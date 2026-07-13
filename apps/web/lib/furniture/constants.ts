@@ -1,7 +1,7 @@
 // El backend exige este mínimo para pasar de DRAFT a revisión (ver
 // MIN_IMAGES_TO_PUBLISH en apps/api/.../furniture.validation.ts) — se
 // duplica aquí solo como valor de referencia para la UI, no como validación.
-export const MIN_IMAGES_TO_PUBLISH = 6;
+export const MIN_IMAGES_TO_PUBLISH = 3;
 export const MAX_IMAGES = 20;
 
 export const CONDITION_OPTIONS = [
@@ -20,18 +20,6 @@ export const ORIGINALITY_OPTIONS = [
 export const PRICE_TYPE_OPTIONS = [
   { value: "FIXED", label: "Precio fijo" },
   { value: "OFFER", label: "Acepta ofertas" },
-];
-
-export const CURRENCY_OPTIONS = [
-  { value: "CLP", label: "CLP — Peso chileno" },
-  { value: "USD", label: "USD — Dólar estadounidense" },
-  { value: "EUR", label: "EUR — Euro" },
-];
-
-export const SHIPPING_METHOD_OPTIONS = [
-  { value: "STANDARD", label: "Envío estándar" },
-  { value: "WHITE_GLOVE", label: "Entrega white-glove" },
-  { value: "PICKUP_ONLY", label: "Retiro en persona" },
 ];
 
 export const STATUS_LABELS: Record<string, string> = {

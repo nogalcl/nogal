@@ -75,15 +75,19 @@ export default async function PieceDetailPage({ params }: PageProps) {
     name: piece.title,
     description: piece.description,
     image: piece.images.map((image) => image.url),
-    offers: {
-      "@type": "Offer",
-      price: piece.price,
-      priceCurrency: piece.currency,
-      availability:
-        piece.status === "PUBLISHED"
-          ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
-    },
+    ...(piece.price != null
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: piece.price,
+            priceCurrency: piece.currency,
+            availability:
+              piece.status === "PUBLISHED"
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+          },
+        }
+      : {}),
   };
 
   return (
@@ -100,9 +104,11 @@ export default async function PieceDetailPage({ params }: PageProps) {
 
         <div className="flex flex-col gap-10">
           <div>
-            <p className="text-muted-foreground text-sm uppercase tracking-widest">
-              {piece.category.name}
-            </p>
+            {piece.category ? (
+              <p className="text-muted-foreground text-sm uppercase tracking-widest">
+                {piece.category.name}
+              </p>
+            ) : null}
             <h1 className="text-foreground mt-3 font-serif text-4xl">
               {piece.title}
             </h1>
@@ -165,7 +171,9 @@ export default async function PieceDetailPage({ params }: PageProps) {
               },
               {
                 label: "Estado de conservación",
-                value: CONDITION_LABELS[piece.condition],
+                value: piece.condition
+                  ? CONDITION_LABELS[piece.condition]
+                  : null,
               },
               {
                 label: "Medidas (an × al × prof)",

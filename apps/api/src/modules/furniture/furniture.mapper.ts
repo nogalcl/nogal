@@ -21,7 +21,7 @@ export function toFurnitureEntity(
 ): FurnitureEntity {
   return {
     ...furniture,
-    price: Number(furniture.price),
+    price: furniture.price ? Number(furniture.price) : null,
     widthCm: furniture.widthCm ? Number(furniture.widthCm) : null,
     heightCm: furniture.heightCm ? Number(furniture.heightCm) : null,
     depthCm: furniture.depthCm ? Number(furniture.depthCm) : null,
@@ -36,7 +36,7 @@ export function toFurniturePreviewEntity(
     id: row.id,
     title: row.title,
     slug: row.slug,
-    price: Number(row.price),
+    price: row.price ? Number(row.price) : null,
     currency: row.currency,
     decade: row.decade,
     condition: row.condition,

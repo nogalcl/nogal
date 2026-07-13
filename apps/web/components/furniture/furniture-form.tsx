@@ -14,10 +14,8 @@ import {
 } from "@/lib/furniture/actions";
 import {
   CONDITION_OPTIONS,
-  CURRENCY_OPTIONS,
   ORIGINALITY_OPTIONS,
   PRICE_TYPE_OPTIONS,
-  SHIPPING_METHOD_OPTIONS,
 } from "@/lib/furniture/constants";
 import {
   emptyFurnitureFormValues,
@@ -26,6 +24,7 @@ import {
 } from "@/lib/furniture/types";
 import { CheckboxGroup } from "./checkbox-group";
 import { FormField } from "@/components/forms/form-field";
+import { GeolocateCityButton } from "./geolocate-city-button";
 import { ImageManager } from "./image-manager";
 import { PhotoPicker } from "./photo-picker";
 import { SelectField } from "./select-field";
@@ -59,11 +58,10 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
 
   const categoryId = watch("categoryId");
   // categoryId no se llena con un <input> nativo (se controla a mano desde
-  // los dos SelectField de abajo vía setValue), así que sin este register
-  // explícito react-hook-form nunca lo valida y el formulario deja mandar
-  // la pieza sin categoría — el backend la rechaza con un genérico "Bad
-  // Request Exception" que no le dice nada al vendedor.
-  register("categoryId", { required: "Selecciona una categoría." });
+  // el SelectField de abajo vía setValue) — sin este register explícito
+  // react-hook-form no lo registra como campo del formulario en absoluto.
+  // Ya no es obligatorio: una pieza puede publicarse sin categoría.
+  register("categoryId");
 
   async function onSubmit(values: FurnitureFormValues) {
     setError(null);
@@ -155,24 +153,39 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
         </div>
 
         <SelectField
-          label="Categoría *"
-          value={categoryId}
+          label="Categoría"
+          value={categoryId ?? ""}
           onChange={(value) =>
-            setValue("categoryId", value, {
-              shouldDirty: true,
-              shouldValidate: true,
-            })
+            setValue("categoryId", value, { shouldDirty: true })
           }
+          emptyLabel="Sin especificar"
           options={taxonomy.categories.map((c) => ({
             value: c.id,
             label: c.name,
           }))}
         />
-        {errors.categoryId ? (
-          <p className="text-destructive text-xs">
-            {errors.categoryId.message}
-          </p>
-        ) : null}
+
+        <div className="flex flex-col gap-2">
+          <FormField
+            label="Ciudad *"
+            {...register("locationCity", {
+              required: "La ciudad es obligatoria.",
+            })}
+          />
+          {errors.locationCity ? (
+            <p className="text-destructive text-xs">
+              {errors.locationCity.message}
+            </p>
+          ) : null}
+          <GeolocateCityButton
+            onDetected={(city) =>
+              setValue("locationCity", city, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
+          />
+        </div>
       </section>
 
       {/* Precio y estado */}
@@ -182,17 +195,10 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <FormField
-            label="Precio"
+            label="Precio (CLP)"
             type="number"
-            step="0.01"
-            {...register("price", {
-              required: "Indica un precio.",
-              valueAsNumber: true,
-              min: {
-                value: 0.01,
-                message: "El precio debe ser mayor que cero.",
-              },
-            })}
+            step="1"
+            {...register("price", { valueAsNumber: true })}
           />
           <Controller
             control={control}
@@ -200,16 +206,14 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
             render={({ field }) => (
               <SelectField
                 label="Estado de conservación"
-                value={field.value}
+                value={field.value ?? ""}
                 onChange={field.onChange}
+                emptyLabel="Sin especificar"
                 options={CONDITION_OPTIONS}
               />
             )}
           />
         </div>
-        {errors.price ? (
-          <p className="text-destructive text-xs">{errors.price.message}</p>
-        ) : null}
       </section>
 
       {/* Detalles adicionales (opcional) */}
@@ -388,21 +392,9 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
 
             <div className="flex flex-col gap-6">
               <h2 className="text-foreground font-serif text-2xl">
-                Moneda y tipo de precio
+                Tipo de precio y región
               </h2>
               <div className="grid gap-6 md:grid-cols-2">
-                <Controller
-                  control={control}
-                  name="currency"
-                  render={({ field }) => (
-                    <SelectField
-                      label="Moneda"
-                      value={field.value}
-                      onChange={field.onChange}
-                      options={CURRENCY_OPTIONS}
-                    />
-                  )}
-                />
                 <Controller
                   control={control}
                   name="priceType"
@@ -415,45 +407,12 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
                     />
                   )}
                 />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-6">
-              <h2 className="text-foreground font-serif text-2xl">
-                Ubicación y envío
-              </h2>
-              <div className="grid gap-6 md:grid-cols-3">
-                <FormField label="Ciudad" {...register("locationCity")} />
                 <FormField label="Región" {...register("locationRegion")} />
-                <Controller
-                  control={control}
-                  name="locationCountryId"
-                  render={({ field }) => (
-                    <SelectField
-                      label="País"
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      emptyLabel="Sin especificar"
-                      options={taxonomy.countries.map((c) => ({
-                        value: c.id,
-                        label: c.name,
-                      }))}
-                    />
-                  )}
-                />
               </div>
-              <Controller
-                control={control}
-                name="shippingMethods"
-                render={({ field }) => (
-                  <CheckboxGroup
-                    legend="Métodos de envío o entrega"
-                    options={SHIPPING_METHOD_OPTIONS}
-                    values={field.value}
-                    onChange={field.onChange}
-                  />
-                )}
-              />
+              <p className="text-muted-foreground text-xs">
+                Retiro en persona — es el único método de entrega en Nogal por
+                ahora.
+              </p>
             </div>
 
             <div className="flex flex-col gap-6">

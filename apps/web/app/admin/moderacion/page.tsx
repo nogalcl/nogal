@@ -53,7 +53,8 @@ export default async function ModerationPage() {
                   {piece.title}
                 </Link>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  {piece.store.name} · {piece.category.name} ·{" "}
+                  {piece.store.name}
+                  {piece.category ? ` · ${piece.category.name}` : ""} ·{" "}
                   {formatPrice(piece.price, piece.currency)}
                 </p>
               </div>

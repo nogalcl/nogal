@@ -40,8 +40,8 @@ export class FurnitureEntity {
   @Field(() => String, { nullable: true })
   rejectionReason?: string | null;
 
-  @Field(() => CategoryEntity)
-  category!: CategoryEntity;
+  @Field(() => CategoryEntity, { nullable: true })
+  category?: CategoryEntity | null;
 
   @Field(() => StyleEntity, { nullable: true })
   style?: StyleEntity | null;
@@ -61,8 +61,8 @@ export class FurnitureEntity {
   @Field(() => [WoodTypeEntity])
   woodTypes!: WoodTypeEntity[];
 
-  @Field(() => FurnitureCondition)
-  condition!: FurnitureCondition;
+  @Field(() => FurnitureCondition, { nullable: true })
+  condition?: FurnitureCondition | null;
 
   @Field(() => String, { nullable: true })
   conditionNotes?: string | null;
@@ -88,8 +88,8 @@ export class FurnitureEntity {
   @Field(() => Float, { nullable: true })
   weightKg?: number | null;
 
-  @Field(() => Float)
-  price!: number;
+  @Field(() => Float, { nullable: true })
+  price?: number | null;
 
   @Field()
   currency!: string;

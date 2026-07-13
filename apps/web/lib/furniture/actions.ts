@@ -32,14 +32,14 @@ function toFurnitureInput(values: FurnitureFormValues) {
   return {
     title: values.title,
     description: values.description,
-    categoryId: values.categoryId,
+    categoryId: values.categoryId || undefined,
     styleId: values.styleId || undefined,
     designerId: values.designerId || undefined,
     manufacturerId: values.manufacturerId || undefined,
     originCountryId: values.originCountryId || undefined,
     materialIds: values.materialIds,
     woodTypeIds: values.woodTypeIds,
-    condition: values.condition,
+    condition: values.condition || undefined,
     conditionNotes: values.conditionNotes || undefined,
     originality: values.originality,
     color: values.color || undefined,
@@ -48,13 +48,10 @@ function toFurnitureInput(values: FurnitureFormValues) {
     heightCm: values.heightCm || undefined,
     depthCm: values.depthCm || undefined,
     weightKg: values.weightKg || undefined,
-    price: values.price,
-    currency: values.currency,
+    price: values.price || undefined,
     priceType: values.priceType,
-    shippingMethods: values.shippingMethods,
-    locationCity: values.locationCity || undefined,
+    locationCity: values.locationCity,
     locationRegion: values.locationRegion || undefined,
-    locationCountryId: values.locationCountryId || undefined,
   };
 }
 

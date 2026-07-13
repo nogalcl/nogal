@@ -181,10 +181,10 @@ export interface FurniturePreview {
   id: string;
   title: string;
   slug: string;
-  price: number;
+  price: number | null;
   currency: string;
   decade: number | null;
-  condition: FurnitureCondition;
+  condition: FurnitureCondition | null;
   locationCity: string | null;
   categoryName: string | null;
   categorySlug: string | null;
@@ -337,14 +337,14 @@ export interface Furniture {
   description: string;
   status: FurnitureStatus;
   rejectionReason: string | null;
-  category: Category;
+  category: Category | null;
   style: TaxonomyTerm | null;
   designer: Designer | null;
   manufacturer: Manufacturer | null;
   originCountry: Country | null;
   materials: TaxonomyTerm[];
   woodTypes: TaxonomyTerm[];
-  condition: FurnitureCondition;
+  condition: FurnitureCondition | null;
   conditionNotes: string | null;
   originality: Originality;
   color: string | null;
@@ -353,7 +353,7 @@ export interface Furniture {
   heightCm: number | null;
   depthCm: number | null;
   weightKg: number | null;
-  price: number;
+  price: number | null;
   currency: string;
   priceType: PriceType;
   shippingMethods: ShippingMethod[];
