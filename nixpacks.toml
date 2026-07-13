@@ -2,10 +2,10 @@
 nixPkgs = ["nodejs_22"]
 
 [phases.install]
-cmds = ["npm install -g pnpm@11.9.0", "pnpm install --frozen-lockfile"]
+cmds = ["npx --yes pnpm@11.9.0 install --frozen-lockfile"]
 
 [phases.build]
-cmds = ["pnpm turbo run build --filter=@nogal/api..."]
+cmds = ["npx --yes pnpm@11.9.0 turbo run build --filter=@nogal/api..."]
 
 [start]
 cmd = "node apps/api/dist/main.js"
