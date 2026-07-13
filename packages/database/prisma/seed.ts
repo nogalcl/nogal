@@ -1823,12 +1823,17 @@ async function main() {
   await seedDecades();
   await seedTrends();
 
-  await cleanupEphemeralVerificationData();
+  // Cuentas, tiendas, piezas y mensajes de ejemplo — solo para desarrollo
+  // local. En producción (SEED_DEMO_DATA=false) se siembra únicamente
+  // contenido real: taxonomía, Base de Conocimiento y Tendencias.
+  if (process.env.SEED_DEMO_DATA !== "false") {
+    await cleanupEphemeralVerificationData();
 
-  const userIdByEmail = await seedDemoUsers();
-  const storeIdByName = await seedDemoStores(userIdByEmail);
-  const furnitureIdByTitle = await seedDemoFurniture(storeIdByName);
-  await seedDemoCommunity(userIdByEmail, storeIdByName, furnitureIdByTitle);
+    const userIdByEmail = await seedDemoUsers();
+    const storeIdByName = await seedDemoStores(userIdByEmail);
+    const furnitureIdByTitle = await seedDemoFurniture(storeIdByName);
+    await seedDemoCommunity(userIdByEmail, storeIdByName, furnitureIdByTitle);
+  }
 
   console.log("Seed completado.");
 }
