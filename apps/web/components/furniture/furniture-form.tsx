@@ -75,6 +75,12 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
   );
 
   const categoryId = watch("categoryId");
+  // categoryId no se llena con un <input> nativo (se controla a mano desde
+  // los dos SelectField de abajo vía setValue), así que sin este register
+  // explícito react-hook-form nunca lo valida y el formulario deja mandar
+  // la pieza sin categoría — el backend la rechaza con un genérico "Bad
+  // Request Exception" que no le dice nada al vendedor.
+  register("categoryId", { required: "Selecciona una categoría." });
 
   async function onSubmit(values: FurnitureFormValues) {
     setError(null);
@@ -137,18 +143,25 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
 
         <div className="grid gap-6 md:grid-cols-2">
           <SelectField
-            label="Categoría"
+            label="Categoría *"
             value={topCategoryId}
             onChange={(value) => {
               setTopCategoryId(value);
-              setValue("categoryId", value, { shouldDirty: true });
+              setValue("categoryId", value, {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
             }}
             options={topCategories.map((c) => ({ value: c.id, label: c.name }))}
           />
           <SelectField
             label="Subcategoría"
             value={categoryId === topCategoryId ? "" : categoryId}
-            onChange={(value) => setValue("categoryId", value || topCategoryId)}
+            onChange={(value) =>
+              setValue("categoryId", value || topCategoryId, {
+                shouldValidate: true,
+              })
+            }
             options={subCategories.map((c) => ({ value: c.id, label: c.name }))}
             placeholder={
               subCategories.length
@@ -158,6 +171,11 @@ export function FurnitureForm({ taxonomy, furniture }: FurnitureFormProps) {
             disabled={subCategories.length === 0}
           />
         </div>
+        {errors.categoryId ? (
+          <p className="text-destructive text-xs">
+            {errors.categoryId.message}
+          </p>
+        ) : null}
       </section>
 
       {/* Características y materiales */}
