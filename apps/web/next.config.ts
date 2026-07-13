@@ -40,6 +40,13 @@ const nextConfig: NextConfig = {
         hostname: "upload.wikimedia.org",
         pathname: "/**",
       },
+      // Cloudflare R2 (producción) — fotos reales subidas por usuarios,
+      // ver modules/storage/providers/r2-storage.provider.ts en apps/api.
+      {
+        protocol: "https",
+        hostname: "pub-e4970ea02f6e4cf1824640c5e036c8dc.r2.dev",
+        pathname: "/**",
+      },
     ],
     // Next.js bloquea por defecto optimizar imágenes servidas desde IPs
     // privadas/loopback (protección SSRF). En desarrollo el "CDN" es
