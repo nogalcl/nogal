@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -29,6 +30,8 @@ const INVALID_CREDENTIALS_MESSAGE = "Correo o contraseña incorrectos.";
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
@@ -74,7 +77,17 @@ export class AuthService {
       include: { role: true, profile: { include: { country: true } } },
     });
 
-    await this.issueEmailVerificationToken(user.id, user.email);
+    // El envío del correo de verificación nunca debe hacer fallar el
+    // registro: la cuenta ya se creó arriba, y un proveedor de correo caído
+    // no puede dejar al usuario sin cuenta ni explicación. Si falla, queda
+    // sin verificar y puede reintentar desde "Reenviar verificación".
+    try {
+      await this.issueEmailVerificationToken(user.id, user.email);
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de verificación a ${user.email}: ${error instanceof Error ? error.message : error}`,
+      );
+    }
 
     return this.issueSession(user.id, role.name);
   }
@@ -180,8 +193,17 @@ export class AuthService {
       },
     });
 
-    const resetUrl = `${this.configService.get("WEB_APP_URL")}/restablecer-password?token=${token}`;
-    await this.mailService.sendPasswordResetEmail(user.email, resetUrl);
+    // No debe lanzar si el correo falla: el método siempre responde éxito
+    // (ver comentario arriba sobre enumeración), y un proveedor caído no
+    // debe convertir esa garantía en un error 500 real.
+    try {
+      const resetUrl = `${this.configService.get("WEB_APP_URL")}/restablecer-password?token=${token}`;
+      await this.mailService.sendPasswordResetEmail(user.email, resetUrl);
+    } catch (error) {
+      this.logger.error(
+        `No se pudo enviar el correo de restablecimiento a ${user.email}: ${error instanceof Error ? error.message : error}`,
+      );
+    }
 
     return true;
   }
