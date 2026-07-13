@@ -71,6 +71,15 @@ const STORE_BY_SLUG_QUERY = gql`
   }
 `;
 
+const STORES_QUERY = gql`
+  ${STORE_PROFILE_FIELDS}
+  query Stores {
+    stores {
+      ...StoreProfileFields
+    }
+  }
+`;
+
 export async function fetchMyStore(accessToken: string): Promise<Store | null> {
   const client = createApiClient(accessToken);
   const data = await client.request<{ myStore: Store | null }>(MY_STORE_QUERY);
@@ -86,6 +95,12 @@ export async function fetchStoreBySlug(
     { slug },
   );
   return data.storeBySlug;
+}
+
+export async function fetchStores(): Promise<StoreProfile[]> {
+  const client = createApiClient();
+  const data = await client.request<{ stores: StoreProfile[] }>(STORES_QUERY);
+  return data.stores;
 }
 
 export async function createStore(

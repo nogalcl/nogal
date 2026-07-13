@@ -78,6 +78,20 @@ export class StoresService {
     return store ? this.toEntity(store) : null;
   }
 
+  /** Directorio público de ateliers — solo tiendas con al menos una pieza publicada. */
+  async findManyPublished(): Promise<StoreEntity[]> {
+    const rows = await this.prisma.client.store.findMany({
+      where: {
+        deletedAt: null,
+        furniture: { some: { deletedAt: null, status: { in: ["PUBLISHED", "RESERVED", "SOLD"] } } },
+      },
+      include: storeInclude,
+      orderBy: [{ isVerified: "desc" }, { createdAt: "desc" }],
+      take: 100,
+    });
+    return Promise.all(rows.map((row) => this.toEntity(row)));
+  }
+
   /** Panel admin — incluye tiendas sin verificar; búsqueda simple por nombre. */
   async findManyForAdmin(search?: string): Promise<StoreEntity[]> {
     const rows = await this.prisma.client.store.findMany({

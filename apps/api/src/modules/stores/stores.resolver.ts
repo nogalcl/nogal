@@ -26,6 +26,12 @@ export class StoresResolver {
     return this.storesService.findEntityBySlug(slug);
   }
 
+  @Public()
+  @Query(() => [StoreEntity])
+  async stores(): Promise<StoreEntity[]> {
+    return this.storesService.findManyPublished();
+  }
+
   @Mutation(() => StoreEntity)
   async updateStore(
     @CurrentUser() authUser: AuthTokenPayload,
