@@ -20,6 +20,7 @@ const columns = [
     links: [
       { href: "/vender", label: "Publicar una pieza" },
       { href: "/valoracion-express", label: "Valoración Express" },
+      { href: "/liquidacion-patrimonio", label: "Liquidación de Patrimonio" },
     ],
   },
   {

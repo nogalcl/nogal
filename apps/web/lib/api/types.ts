@@ -448,3 +448,95 @@ export interface ValuationRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+export type EstateLiquidationRequestStatus =
+  | "DRAFT"
+  | "PENDING"
+  | "IN_REVIEW"
+  | "COMPLETED"
+  | "CANCELLED";
+
+export type EstateLiquidationPieceOutcome =
+  | "SELL_ON_NOGAL"
+  | "REFER_RESTORER"
+  | "INFORM_ONLY";
+
+export interface Restorer {
+  id: string;
+  name: string;
+  specialty: string | null;
+  phone: string | null;
+  email: string | null;
+  city: string | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EstateLiquidationPieceImage {
+  id: string;
+  url: string;
+  altText: string | null;
+  order: number;
+  width: number | null;
+  height: number | null;
+}
+
+export interface EstateLiquidationPiece {
+  id: string;
+  requestId: string;
+  title: string;
+  description: string | null;
+  category: Category | null;
+  images: EstateLiquidationPieceImage[];
+  outcome: EstateLiquidationPieceOutcome | null;
+  condition: FurnitureCondition | null;
+  expertNotes: string | null;
+  estimatedValueMin: number | null;
+  estimatedValueMax: number | null;
+  /** null para el solicitante — Nogal actúa de intermediario, nunca se
+   * expone el contacto del restaurador al cliente. */
+  recommendedRestorer: Restorer | null;
+  classifiedAt: string | null;
+  classifiedBy: ConversationParticipant | null;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EstateLiquidationComment {
+  id: string;
+  body: string;
+  author: ConversationParticipant;
+  createdAt: string;
+}
+
+export interface EstateLiquidationHistoryEntry {
+  id: string;
+  description: string;
+  actorName: string | null;
+  createdAt: string;
+}
+
+export interface EstateLiquidationRequest {
+  id: string;
+  contactName: string | null;
+  contactPhone: string | null;
+  addressLine: string | null;
+  addressCity: string | null;
+  addressRegion: string | null;
+  visitNotes: string | null;
+  pieces: EstateLiquidationPiece[];
+  unitFee: number;
+  totalFee: number | null;
+  currency: string;
+  paidAt: string | null;
+  status: EstateLiquidationRequestStatus;
+  requester: ConversationParticipant;
+  assignedExpert: ConversationParticipant | null;
+  comments: EstateLiquidationComment[];
+  history: EstateLiquidationHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+}

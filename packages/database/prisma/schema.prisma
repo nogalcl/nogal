@@ -87,6 +87,22 @@ enum ValuationObjective {
   RESTORE
 }
 
+enum EstateLiquidationRequestStatus {
+  DRAFT
+  PENDING
+  IN_REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+/// Recomendación del experto para una pieza individual dentro de una
+/// liquidación de patrimonio — ver EstateLiquidationPiece.
+enum EstateLiquidationPieceOutcome {
+  SELL_ON_NOGAL
+  REFER_RESTORER
+  INFORM_ONLY
+}
+
 enum TrendCategory {
   NEWS
   MARKET
@@ -103,6 +119,7 @@ enum NotificationType {
   LISTING_APPROVED
   LISTING_REJECTED
   VALUATION_READY
+  ESTATE_LIQUIDATION_READY
   SYSTEM
   NEW_FOLLOWER
   FURNITURE_FAVORITED
@@ -153,11 +170,16 @@ model User {
   valuationsAssigned ValuationRequest[] @relation("ValuationAssignedExpert")
   valuationComments  ValuationComment[] @relation("ValuationCommentAuthor")
   valuationsHandled  ValuationReport[]  @relation("ValuationExpert")
-  reportsFiled       Report[]           @relation("ReportReporter")
-  reportsResolved    Report[]           @relation("ReportResolver")
-  notifications      Notification[]
-  auditLogs          AuditLog[]
-  furnitureVerified  Furniture[]        @relation("FurnitureVerifiedBy")
+
+  estateLiquidationRequests    EstateLiquidationRequest[] @relation("EstateLiquidationRequester")
+  estateLiquidationsAssigned   EstateLiquidationRequest[] @relation("EstateLiquidationAssignedExpert")
+  estateLiquidationComments    EstateLiquidationComment[] @relation("EstateLiquidationCommentAuthor")
+  estateLiquidationsClassified EstateLiquidationPiece[]   @relation("EstateLiquidationClassifier")
+  reportsFiled                 Report[]                   @relation("ReportReporter")
+  reportsResolved              Report[]                   @relation("ReportResolver")
+  notifications                Notification[]
+  auditLogs                    AuditLog[]
+  furnitureVerified            Furniture[]                @relation("FurnitureVerifiedBy")
 
   // Grafo social: un Follow conecta a un follower con la cuenta seguida.
   // Seguir una tienda equivale a seguir la cuenta de su dueño (ver comentario
@@ -287,8 +309,9 @@ model Category {
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children    Category[] @relation("CategoryHierarchy")
 
-  furniture         Furniture[]
-  valuationRequests ValuationRequest[]
+  furniture               Furniture[]
+  valuationRequests       ValuationRequest[]
+  estateLiquidationPieces EstateLiquidationPiece[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -504,7 +527,7 @@ model Furniture {
 
   condition      FurnitureCondition?
   conditionNotes String?
-  originality    Originality        @default(ORIGINAL)
+  originality    Originality         @default(ORIGINAL)
   color          String?
   // Década de origen (p. ej. 1960). Se modela como entero simple en lugar de
   // una tabla propia: es un rango cerrado y ordenable, no una taxonomía con
@@ -885,6 +908,162 @@ model ValuationReport {
   @@index([styleId])
   @@index([designerId])
   @@index([manufacturerId])
+}
+
+// ---------------------------------------------------------------------------
+// Liquidación de patrimonio — servicio hermano de Valoración Express, pero
+// para varias piezas a la vez (p. ej. despejar la casa de un familiar
+// fallecido). Se cobra por pieza clasificada, no por comisión sobre venta.
+// Módulo independiente de ValuationRequest a propósito: la cardinalidad
+// (una pieza vs. muchas) es distinta, y ValuationRequest ya está en
+// producción — ver ARCHITECTURE.md / plan de implementación.
+// ---------------------------------------------------------------------------
+
+/// DRAFT mientras el cliente arma la lista de piezas y sus fotos. PENDING =
+/// pagado (unitFee × cantidad de piezas, congelado en totalFee) y en cola
+/// para un especialista. IN_REVIEW = un experto está clasificando pieza por
+/// pieza. COMPLETED = todas las piezas tienen un resultado asignado.
+model EstateLiquidationRequest {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  requesterId String @db.Uuid
+  requester   User   @relation("EstateLiquidationRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+
+  // Paso "contacto y visita" — nullable a nivel de columna porque se
+  // completa progresivamente, igual criterio que ValuationRequest.
+  contactName   String?
+  contactPhone  String?
+  addressLine   String?
+  addressCity   String?
+  addressRegion String?
+  visitNotes    String?
+
+  pieces EstateLiquidationPiece[]
+
+  // Pago (simulado, igual que ValuationRequest.paidAt). totalFee se calcula
+  // y congela recién al enviar (unitFee × cantidad de piezas en ese
+  // momento) — no es un valor derivado en vivo, para que quede como
+  // registro auditable de lo que efectivamente se cobró.
+  unitFee  Decimal   @default(14990) @db.Decimal(12, 2)
+  totalFee Decimal?  @db.Decimal(12, 2)
+  currency String    @default("CLP")
+  paidAt   DateTime?
+
+  status EstateLiquidationRequestStatus @default(DRAFT)
+
+  assignedExpertId String? @db.Uuid
+  assignedExpert   User?   @relation("EstateLiquidationAssignedExpert", fields: [assignedExpertId], references: [id], onDelete: SetNull)
+
+  // Notas internas del panel experto — nunca visibles para el solicitante.
+  comments EstateLiquidationComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requesterId])
+  @@index([status])
+  @@index([assignedExpertId])
+}
+
+/// Una pieza dentro de una solicitud de liquidación de patrimonio. El
+/// cliente la crea con datos básicos; el experto la clasifica con un
+/// resultado (vender en Nogal / derivar a restaurador / solo informar).
+/// Deliberadamente más liviano que ValuationReport: no reutiliza la
+/// taxonomía completa de diseñador/fabricante/estilo — esto es triage de
+/// un lote, no un avalúo de conocedor pieza por pieza.
+model EstateLiquidationPiece {
+  id        String                   @id @default(uuid(7)) @db.Uuid
+  requestId String                   @db.Uuid
+  request   EstateLiquidationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  categoryId  String?   @db.Uuid
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  images EstateLiquidationPieceImage[]
+
+  // Clasificación del experto — null hasta que se revisa la pieza.
+  outcome           EstateLiquidationPieceOutcome?
+  condition         FurnitureCondition?
+  expertNotes       String?
+  estimatedValueMin Decimal?                       @db.Decimal(12, 2)
+  estimatedValueMax Decimal?                       @db.Decimal(12, 2)
+
+  // Solo aplica cuando outcome = REFER_RESTORER (validado en el service).
+  recommendedRestorerId String?   @db.Uuid
+  recommendedRestorer   Restorer? @relation(fields: [recommendedRestorerId], references: [id], onDelete: SetNull)
+
+  classifiedAt   DateTime?
+  classifiedById String?   @db.Uuid
+  classifiedBy   User?     @relation("EstateLiquidationClassifier", fields: [classifiedById], references: [id], onDelete: SetNull)
+
+  order Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requestId])
+  @@index([categoryId])
+  @@index([recommendedRestorerId])
+}
+
+model EstateLiquidationPieceImage {
+  id      String                 @id @default(uuid(7)) @db.Uuid
+  pieceId String                 @db.Uuid
+  piece   EstateLiquidationPiece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
+  url     String
+  altText String?
+  order   Int     @default(0)
+  width   Int?
+  height  Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([pieceId])
+}
+
+/// Comentario interno del panel experto — nunca visible para el
+/// solicitante (mismo criterio que ValuationComment).
+model EstateLiquidationComment {
+  id        String                   @id @default(uuid(7)) @db.Uuid
+  requestId String                   @db.Uuid
+  request   EstateLiquidationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  authorId String @db.Uuid
+  author   User   @relation("EstateLiquidationCommentAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  body String
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+}
+
+/// Directorio interno de restauradores a los que se derivan piezas — nunca
+/// visible para el cliente (Nogal actúa de intermediario, ver decisión de
+/// negocio en el plan de implementación). Sin taxonomía cerrada de
+/// especialidad: son contactos reales cargados a mano por el dueño.
+/// isActive en vez de borrado real: una pieza ya clasificada históricamente
+/// sigue apuntando a este registro (recommendedRestorerId).
+model Restorer {
+  id String @id @default(uuid(7)) @db.Uuid
+
+  name      String
+  specialty String?
+  phone     String?
+  email     String?
+  city      String?
+  notes     String?
+  isActive  Boolean @default(true)
+
+  recommendedFor EstateLiquidationPiece[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
 }
 
 // ---------------------------------------------------------------------------

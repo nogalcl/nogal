@@ -26,6 +26,8 @@ import { ReportsModule } from "@/modules/reports/reports.module";
 import { ValuationModule } from "@/modules/valuation/valuation.module";
 import { AuditModule } from "@/modules/audit/audit.module";
 import { TrendsModule } from "@/modules/trends/trends.module";
+import { EstateLiquidationModule } from "@/modules/estate-liquidation/estate-liquidation.module";
+import { RestorerModule } from "@/modules/restorers/restorer.module";
 
 @Module({
   imports: [
@@ -60,6 +62,8 @@ import { TrendsModule } from "@/modules/trends/trends.module";
     ValuationModule,
     AuditModule,
     TrendsModule,
+    EstateLiquidationModule,
+    RestorerModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: GqlThrottlerGuard },

@@ -6,6 +6,8 @@ const SECTIONS = [
   { href: "/admin/tiendas", label: "Tiendas" },
   { href: "/admin/reportes", label: "Reportes" },
   { href: "/valoracion-express/panel", label: "Valoraciones" },
+  { href: "/liquidacion-patrimonio/panel", label: "Liquidaciones" },
+  { href: "/admin/restauradores", label: "Restauradores" },
   { href: "/admin/usuarios", label: "Usuarios" },
   { href: "/admin/logs", label: "Logs" },
   { href: "/admin/permisos", label: "Permisos" },

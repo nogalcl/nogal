@@ -94,6 +94,13 @@ export function formatNotification(
         link: requestId ? `/valoracion-express/solicitudes/${requestId}` : null,
       };
     }
+    case "ESTATE_LIQUIDATION_READY": {
+      const requestId = str(payload, "requestId");
+      return {
+        message: "Tu liquidación de patrimonio ya fue clasificada — revisa el resultado de cada pieza.",
+        link: requestId ? `/liquidacion-patrimonio/solicitudes/${requestId}` : null,
+      };
+    }
     case "NEW_OFFER":
       return {
         message: "Recibiste una nueva oferta.",

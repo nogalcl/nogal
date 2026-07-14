@@ -1,7 +1,7 @@
 import "server-only";
 import { gql } from "graphql-request";
 import { createApiClient } from "./client";
-import type { FurnitureStatus } from "./types";
+import type { FurnitureStatus, Restorer } from "./types";
 
 // --- Moderación de piezas ---
 
@@ -362,4 +362,123 @@ export async function fetchAuditLogs(
     { targetType },
   );
   return data.auditLogs;
+}
+
+const RESTORER_FIELDS = gql`
+  fragment RestorerFields on RestorerEntity {
+    id
+    name
+    specialty
+    phone
+    email
+    city
+    notes
+    isActive
+    createdAt
+    updatedAt
+  }
+`;
+
+export async function fetchRestorers(accessToken: string): Promise<Restorer[]> {
+  const client = createApiClient(accessToken);
+  const data = await client.request<{ restorers: Restorer[] }>(
+    gql`
+      ${RESTORER_FIELDS}
+      query Restorers {
+        restorers {
+          ...RestorerFields
+        }
+      }
+    `,
+  );
+  return data.restorers;
+}
+
+export async function fetchRestorer(
+  accessToken: string,
+  id: string,
+): Promise<Restorer> {
+  const client = createApiClient(accessToken);
+  const data = await client.request<{ restorer: Restorer }>(
+    gql`
+      ${RESTORER_FIELDS}
+      query Restorer($id: String!) {
+        restorer(id: $id) {
+          ...RestorerFields
+        }
+      }
+    `,
+    { id },
+  );
+  return data.restorer;
+}
+
+export interface CreateRestorerInput {
+  name: string;
+  specialty?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  notes?: string;
+}
+
+export async function createRestorer(
+  accessToken: string,
+  input: CreateRestorerInput,
+): Promise<Restorer> {
+  const client = createApiClient(accessToken);
+  const data = await client.request<{ createRestorer: Restorer }>(
+    gql`
+      ${RESTORER_FIELDS}
+      mutation CreateRestorer($input: CreateRestorerInput!) {
+        createRestorer(input: $input) {
+          ...RestorerFields
+        }
+      }
+    `,
+    { input },
+  );
+  return data.createRestorer;
+}
+
+export interface UpdateRestorerInput extends CreateRestorerInput {
+  id: string;
+  isActive?: boolean;
+}
+
+export async function updateRestorer(
+  accessToken: string,
+  input: UpdateRestorerInput,
+): Promise<Restorer> {
+  const client = createApiClient(accessToken);
+  const data = await client.request<{ updateRestorer: Restorer }>(
+    gql`
+      ${RESTORER_FIELDS}
+      mutation UpdateRestorer($input: UpdateRestorerInput!) {
+        updateRestorer(input: $input) {
+          ...RestorerFields
+        }
+      }
+    `,
+    { input },
+  );
+  return data.updateRestorer;
+}
+
+export async function setRestorerActive(
+  accessToken: string,
+  id: string,
+  isActive: boolean,
+): Promise<void> {
+  const client = createApiClient(accessToken);
+  await client.request(
+    gql`
+      mutation SetRestorerActive($id: String!, $isActive: Boolean!) {
+        setRestorerActive(id: $id, isActive: $isActive) {
+          id
+        }
+      }
+    `,
+    { id, isActive },
+  );
 }

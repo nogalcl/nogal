@@ -4,13 +4,18 @@ import { revalidatePath } from "next/cache";
 import { extractErrorMessage } from "@/lib/api/client";
 import {
   approveFurniture,
+  createRestorer,
   rejectFurniture,
   resolveReport,
   restoreUser,
+  setRestorerActive,
   setUserRole,
   suspendUser,
   unverifyStore,
+  updateRestorer,
   verifyStore,
+  type CreateRestorerInput,
+  type UpdateRestorerInput,
 } from "@/lib/api/admin";
 import { requireAccessToken } from "@/lib/auth/session";
 import type { ActionResult } from "@/lib/api/action-result";
@@ -106,6 +111,46 @@ export async function restoreUserAction(userId: string): Promise<ActionResult> {
     const token = await requireAccessToken();
     await restoreUser(token, userId);
     revalidatePath("/admin/usuarios");
+    return { success: true };
+  } catch (error) {
+    return { error: extractErrorMessage(error) };
+  }
+}
+
+export async function createRestorerAction(
+  input: CreateRestorerInput,
+): Promise<ActionResult & { id?: string }> {
+  try {
+    const token = await requireAccessToken();
+    const created = await createRestorer(token, input);
+    revalidatePath("/admin/restauradores");
+    return { success: true, id: created.id };
+  } catch (error) {
+    return { error: extractErrorMessage(error) };
+  }
+}
+
+export async function updateRestorerAction(
+  input: UpdateRestorerInput,
+): Promise<ActionResult> {
+  try {
+    const token = await requireAccessToken();
+    await updateRestorer(token, input);
+    revalidatePath("/admin/restauradores");
+    return { success: true };
+  } catch (error) {
+    return { error: extractErrorMessage(error) };
+  }
+}
+
+export async function setRestorerActiveAction(
+  id: string,
+  isActive: boolean,
+): Promise<ActionResult> {
+  try {
+    const token = await requireAccessToken();
+    await setRestorerActive(token, id, isActive);
+    revalidatePath("/admin/restauradores");
     return { success: true };
   } catch (error) {
     return { error: extractErrorMessage(error) };
