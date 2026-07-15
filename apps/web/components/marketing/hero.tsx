@@ -10,15 +10,6 @@ import { Button } from "@/components/ui/button";
 const HERO_SLIDES: HeroSlide[] = [
   {
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/5/59/Ngv_design%2C_ludwig_mies_van_der_rohe_%26_co%2C_barcelona_chair.JPG",
-    imageAlt:
-      "Silla Barcelona de Ludwig Mies van der Rohe, cuero negro acolchado y estructura de acero cromado",
-    imageCredit: "Foto: Sailko / Wikimedia Commons, CC BY-SA 3.0",
-    title: "Barcelona Chair — Ludwig Mies van der Rohe, 1929",
-    subtitle: "Cuero y acero cromado",
-  },
-  {
-    imageUrl:
       "https://upload.wikimedia.org/wikipedia/commons/0/0d/Wassily_Chair_by_Marcel_Breuer%2C_reproduction%2C_1925%2C_chrome_covered_steel_and_belting_leather_-_University_of_Arizona_Museum_of_Art_-_University_of_Arizona_-_Tucson%2C_AZ_-_DSC08029.jpg",
     imageAlt:
       "Silla Wassily de Marcel Breuer, correas de cuero rojo sobre estructura de tubo de acero cromado",
@@ -28,12 +19,57 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/5/59/Ngv_design%2C_ludwig_mies_van_der_rohe_%26_co%2C_barcelona_chair.JPG",
+    imageAlt:
+      "Silla Barcelona de Ludwig Mies van der Rohe, cuero negro acolchado y estructura de acero cromado",
+    imageCredit: "Foto: Sailko / Wikimedia Commons, CC BY-SA 3.0",
+    title: "Barcelona Chair — Ludwig Mies van der Rohe, 1929",
+    subtitle: "Cuero y acero cromado",
+  },
+  {
+    imageUrl:
       "https://upload.wikimedia.org/wikipedia/commons/e/e8/Ngv_design%2C_charles_eames_and_herman_miller%2C_lounge_chair_670%2C_1956.JPG",
     imageAlt:
       "Eames Lounge Chair, cáscaras de contrachapado, tapizado en cuero oscuro y base giratoria de aluminio",
     imageCredit: "Foto: Sailko / Wikimedia Commons, CC BY-SA 3.0",
     title: "Eames Lounge Chair — Charles & Ray Eames, 1956",
     subtitle: "Cuero y aluminio",
+  },
+  {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/4/40/Farnsworth_House_%285923839782%29.jpg",
+    imageAlt:
+      "Comedor de la Casa Farnsworth: sillas MR de Mies van der Rohe en cuero coñac y acero cromado alrededor de una mesa de nogal",
+    imageCredit: "Foto: Benjamin Lipsman / Wikimedia Commons, CC BY 2.0",
+    title: "Comedor de la Casa Farnsworth — Ludwig Mies van der Rohe, 1951",
+    subtitle: "Plano, Illinois — cuero y acero cromado",
+  },
+  {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/b/b2/Huize_Sonneveld%2C_Eetkamer.jpg",
+    imageAlt:
+      "Comedor completo de Huis Sonneveld en Róterdam, con mesa y sillas de acero tubular cromado diseñadas por W. H. Gispen",
+    imageCredit: "Foto: Davidh820 / Wikimedia Commons, CC BY-SA 4.0",
+    title: "Comedor de Huis Sonneveld — W. H. Gispen, 1933",
+    subtitle: "Róterdam — acero tubular cromado",
+  },
+  {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/26/Salle_%C3%A0_manger_de_la_Villa_Cavrois_%C3%A0_Croix.jpg",
+    imageAlt:
+      "Comedor de la Villa Cavrois: mesa lacada en negro y sillas tapizadas en cuero coñac, junto a un muro de mármol veteado",
+    imageCredit: "Foto: JackyM59 / Wikimedia Commons, CC BY-SA 4.0",
+    title: "Comedor de la Villa Cavrois — Robert Mallet-Stevens, 1932",
+    subtitle: "Croix, Francia — cuero y laca negra",
+  },
+  {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/f/fc/Bauhaus_building_-_Wassily_Chairs_by_Marcel_Breuer_%281925_26%29_%283925088681%29.jpg",
+    imageAlt:
+      "Conjunto de sillones Wassily en cuero rojo y acero cromado, en el edificio histórico de la Bauhaus en Dessau",
+    imageCredit: "Foto: Kai 'Oswald' Seidler / Wikimedia Commons, CC BY 2.0",
+    title: "Sillones Wassily — Edificio de la Bauhaus, Dessau",
+    subtitle: "Marcel Breuer, 1925-26 — cuero y acero cromado",
   },
 ];
 
