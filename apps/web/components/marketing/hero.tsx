@@ -10,21 +10,21 @@ import { Button } from "@/components/ui/button";
 const HERO_SLIDES: HeroSlide[] = [
   {
     imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/4/40/Farnsworth_House_%285923839782%29.jpg",
+    imageAlt:
+      "Comedor de la Casa Farnsworth: sillas MR de Mies van der Rohe en cuero coñac y acero cromado alrededor de una mesa de nogal",
+    imageCredit: "Foto: Benjamin Lipsman / Wikimedia Commons, CC BY 2.0",
+    title: "Comedor de la Casa Farnsworth — Ludwig Mies van der Rohe, 1951",
+    subtitle: "Plano, Illinois — cuero y acero cromado",
+  },
+  {
+    imageUrl:
       "https://upload.wikimedia.org/wikipedia/commons/0/0d/Wassily_Chair_by_Marcel_Breuer%2C_reproduction%2C_1925%2C_chrome_covered_steel_and_belting_leather_-_University_of_Arizona_Museum_of_Art_-_University_of_Arizona_-_Tucson%2C_AZ_-_DSC08029.jpg",
     imageAlt:
       "Silla Wassily de Marcel Breuer, correas de cuero rojo sobre estructura de tubo de acero cromado",
     imageCredit: "Foto: Daderot / Wikimedia Commons, dominio público (CC0)",
     title: "Wassily Chair — Marcel Breuer, 1925",
     subtitle: "Bauhaus, Dessau — cuero y acero tubular",
-  },
-  {
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/5/59/Ngv_design%2C_ludwig_mies_van_der_rohe_%26_co%2C_barcelona_chair.JPG",
-    imageAlt:
-      "Silla Barcelona de Ludwig Mies van der Rohe, cuero negro acolchado y estructura de acero cromado",
-    imageCredit: "Foto: Sailko / Wikimedia Commons, CC BY-SA 3.0",
-    title: "Barcelona Chair — Ludwig Mies van der Rohe, 1929",
-    subtitle: "Cuero y acero cromado",
   },
   {
     imageUrl:
@@ -37,21 +37,21 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/4/40/Farnsworth_House_%285923839782%29.jpg",
-    imageAlt:
-      "Comedor de la Casa Farnsworth: sillas MR de Mies van der Rohe en cuero coñac y acero cromado alrededor de una mesa de nogal",
-    imageCredit: "Foto: Benjamin Lipsman / Wikimedia Commons, CC BY 2.0",
-    title: "Comedor de la Casa Farnsworth — Ludwig Mies van der Rohe, 1951",
-    subtitle: "Plano, Illinois — cuero y acero cromado",
-  },
-  {
-    imageUrl:
       "https://upload.wikimedia.org/wikipedia/commons/b/b2/Huize_Sonneveld%2C_Eetkamer.jpg",
     imageAlt:
       "Comedor completo de Huis Sonneveld en Róterdam, con mesa y sillas de acero tubular cromado diseñadas por W. H. Gispen",
     imageCredit: "Foto: Davidh820 / Wikimedia Commons, CC BY-SA 4.0",
     title: "Comedor de Huis Sonneveld — W. H. Gispen, 1933",
     subtitle: "Róterdam — acero tubular cromado",
+  },
+  {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/5/59/Ngv_design%2C_ludwig_mies_van_der_rohe_%26_co%2C_barcelona_chair.JPG",
+    imageAlt:
+      "Silla Barcelona de Ludwig Mies van der Rohe, cuero negro acolchado y estructura de acero cromado",
+    imageCredit: "Foto: Sailko / Wikimedia Commons, CC BY-SA 3.0",
+    title: "Barcelona Chair — Ludwig Mies van der Rohe, 1929",
+    subtitle: "Cuero y acero cromado",
   },
   {
     imageUrl:
