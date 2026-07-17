@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AvatarUpload } from "@/components/account/avatar-upload";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { fetchCurrentUser } from "@/lib/api/auth";
@@ -37,6 +38,15 @@ export default async function AccountPage() {
             ? `${user.profile.firstName} ${user.profile.lastName}`
             : user.email}
         </h1>
+
+        {user.profile ? (
+          <div className="mt-8">
+            <AvatarUpload
+              name={`${user.profile.firstName} ${user.profile.lastName}`}
+              initialAvatarUrl={user.profile.avatarUrl}
+            />
+          </div>
+        ) : null}
 
         <dl className="border-border mt-10 flex flex-col gap-4 border-t pt-8 text-sm">
           <div className="flex justify-between">

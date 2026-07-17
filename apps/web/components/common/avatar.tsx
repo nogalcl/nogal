@@ -26,7 +26,13 @@ export function Avatar({
           className,
         )}
       >
-        <Image src={imageUrl} alt={name} fill className="object-cover" />
+        <Image
+          src={imageUrl}
+          alt={name}
+          fill
+          sizes="64px"
+          className="object-cover"
+        />
       </div>
     );
   }

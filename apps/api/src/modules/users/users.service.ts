@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { User, Profile, Country, RoleName } from "@nogal/database";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { FollowsService } from "@/modules/social/follows.service";
@@ -7,6 +7,10 @@ import {
   type FurniturePreviewRow,
 } from "@/modules/furniture/furniture.repository";
 import { toFurniturePreviewEntity } from "@/modules/furniture/furniture.mapper";
+import {
+  STORAGE_PROVIDER,
+  type StorageProvider,
+} from "@/modules/storage/storage.interface";
 import type { UserEntity } from "./entities/user.entity";
 import type { PublicProfileEntity } from "./entities/public-profile.entity";
 
@@ -24,6 +28,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly followsService: FollowsService,
+    @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
   ) {}
 
   private readonly includeRelations = {
@@ -128,6 +133,48 @@ export class UsersService {
     };
   }
 
+  async updateAvatar(userId: string, buffer: Buffer): Promise<UserEntity> {
+    const previous = await this.prisma.client.profile.findUniqueOrThrow({
+      where: { userId },
+      select: { avatarUrl: true },
+    });
+    const stored = await this.storage.storeImage({
+      buffer,
+      keyPrefix: `profile/${userId}`,
+    });
+    await this.prisma.client.profile.update({
+      where: { userId },
+      data: { avatarUrl: stored.publicUrl },
+    });
+    if (previous.avatarUrl) {
+      await this.storage.deleteObject(keyFromPublicUrl(previous.avatarUrl));
+    }
+    const user = await this.prisma.client.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: this.includeRelations,
+    });
+    return this.toEntity(user);
+  }
+
+  async removeAvatar(userId: string): Promise<UserEntity> {
+    const previous = await this.prisma.client.profile.findUniqueOrThrow({
+      where: { userId },
+      select: { avatarUrl: true },
+    });
+    await this.prisma.client.profile.update({
+      where: { userId },
+      data: { avatarUrl: null },
+    });
+    if (previous.avatarUrl) {
+      await this.storage.deleteObject(keyFromPublicUrl(previous.avatarUrl));
+    }
+    const user = await this.prisma.client.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: this.includeRelations,
+    });
+    return this.toEntity(user);
+  }
+
   // -----------------------------------------------------------------------
   // Panel admin (ADMIN — guard de rol aplicado en el resolver)
   // -----------------------------------------------------------------------
@@ -203,4 +250,9 @@ export class UsersService {
         : null,
     };
   }
+}
+
+function keyFromPublicUrl(url: string): string {
+  const path = new URL(url).pathname.replace(/^\//, "");
+  return path.startsWith("uploads/") ? path.slice("uploads/".length) : path;
 }
