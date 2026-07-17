@@ -21,7 +21,6 @@ import { siteConfig } from "@/lib/site";
 const primaryNav = [
   { href: "/explorar", label: "Piezas" },
   { href: "/colecciones", label: "Colecciones" },
-  { href: "/ateliers", label: "Ateliers" },
   { href: "/tendencias", label: "Tendencias" },
 ] as const;
 
