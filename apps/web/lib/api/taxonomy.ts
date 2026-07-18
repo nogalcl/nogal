@@ -1,5 +1,5 @@
 import "server-only";
-import { gql } from "graphql-request";
+import { gql, type Variables } from "graphql-request";
 import { createApiClient } from "./client";
 import type {
   Category,
@@ -10,6 +10,26 @@ import type {
   Manufacturer,
   TaxonomyTerm,
 } from "./types";
+
+// Estas son todas lecturas públicas usadas por páginas de catálogo/base de
+// conocimiento que Next intenta generar de forma estática en build time. Si
+// la base de datos no responde en ese momento (mantenimiento, caída), una
+// sola de estas páginas revienta el build completo — así que acá se
+// degradan a un valor vacío en vez de tumbar el despliegue entero por un
+// listado no crítico.
+async function safeRequest<T>(
+  query: string,
+  variables: Variables | undefined,
+  fallback: T,
+): Promise<T> {
+  try {
+    const client = createApiClient();
+    return await client.request<T>(query, variables);
+  } catch (error) {
+    console.error("[taxonomy] fetch falló, usando valor por defecto:", error);
+    return fallback;
+  }
+}
 
 export interface TaxonomyOptions {
   categories: Category[];
@@ -83,8 +103,15 @@ const TAXONOMY_QUERY = gql`
 `;
 
 export async function fetchTaxonomyOptions(): Promise<TaxonomyOptions> {
-  const client = createApiClient();
-  return client.request<TaxonomyOptions>(TAXONOMY_QUERY);
+  return safeRequest<TaxonomyOptions>(TAXONOMY_QUERY, undefined, {
+    categories: [],
+    materials: [],
+    woodTypes: [],
+    styles: [],
+    designers: [],
+    manufacturers: [],
+    countries: [],
+  });
 }
 
 const CATEGORY_BY_SLUG_QUERY = gql`
@@ -307,46 +334,46 @@ const DECADE_BY_VALUE_QUERY = gql`
 `;
 
 export async function fetchCategoryBySlug(slug: string): Promise<Category | null> {
-  const client = createApiClient();
-  const data = await client.request<{ categoryBySlug: Category | null }>(
+  const data = await safeRequest<{ categoryBySlug: Category | null }>(
     CATEGORY_BY_SLUG_QUERY,
     { slug },
+    { categoryBySlug: null },
   );
   return data.categoryBySlug;
 }
 
 export async function fetchMaterialBySlug(slug: string): Promise<TaxonomyTerm | null> {
-  const client = createApiClient();
-  const data = await client.request<{ materialBySlug: TaxonomyTerm | null }>(
+  const data = await safeRequest<{ materialBySlug: TaxonomyTerm | null }>(
     MATERIAL_BY_SLUG_QUERY,
     { slug },
+    { materialBySlug: null },
   );
   return data.materialBySlug;
 }
 
 export async function fetchWoodTypeBySlug(slug: string): Promise<TaxonomyTerm | null> {
-  const client = createApiClient();
-  const data = await client.request<{ woodTypeBySlug: TaxonomyTerm | null }>(
+  const data = await safeRequest<{ woodTypeBySlug: TaxonomyTerm | null }>(
     WOOD_TYPE_BY_SLUG_QUERY,
     { slug },
+    { woodTypeBySlug: null },
   );
   return data.woodTypeBySlug;
 }
 
 export async function fetchStyleBySlug(slug: string): Promise<TaxonomyTerm | null> {
-  const client = createApiClient();
-  const data = await client.request<{ styleBySlug: TaxonomyTerm | null }>(
+  const data = await safeRequest<{ styleBySlug: TaxonomyTerm | null }>(
     STYLE_BY_SLUG_QUERY,
     { slug },
+    { styleBySlug: null },
   );
   return data.styleBySlug;
 }
 
 export async function fetchDesignerBySlug(slug: string): Promise<Designer | null> {
-  const client = createApiClient();
-  const data = await client.request<{ designerBySlug: Designer | null }>(
+  const data = await safeRequest<{ designerBySlug: Designer | null }>(
     DESIGNER_BY_SLUG_QUERY,
     { slug },
+    { designerBySlug: null },
   );
   return data.designerBySlug;
 }
@@ -354,34 +381,37 @@ export async function fetchDesignerBySlug(slug: string): Promise<Designer | null
 export async function fetchManufacturerBySlug(
   slug: string,
 ): Promise<Manufacturer | null> {
-  const client = createApiClient();
-  const data = await client.request<{ manufacturerBySlug: Manufacturer | null }>(
+  const data = await safeRequest<{ manufacturerBySlug: Manufacturer | null }>(
     MANUFACTURER_BY_SLUG_QUERY,
     { slug },
+    { manufacturerBySlug: null },
   );
   return data.manufacturerBySlug;
 }
 
 export async function fetchCountryBySlug(slug: string): Promise<CountryDetail | null> {
-  const client = createApiClient();
-  const data = await client.request<{ countryBySlug: CountryDetail | null }>(
+  const data = await safeRequest<{ countryBySlug: CountryDetail | null }>(
     COUNTRY_BY_SLUG_QUERY,
     { slug },
+    { countryBySlug: null },
   );
   return data.countryBySlug;
 }
 
 export async function fetchDecades(): Promise<Decade[]> {
-  const client = createApiClient();
-  const data = await client.request<{ decades: Decade[] }>(DECADES_QUERY);
+  const data = await safeRequest<{ decades: Decade[] }>(
+    DECADES_QUERY,
+    undefined,
+    { decades: [] },
+  );
   return data.decades;
 }
 
 export async function fetchDecadeByValue(value: number): Promise<Decade | null> {
-  const client = createApiClient();
-  const data = await client.request<{ decadeByValue: Decade | null }>(
+  const data = await safeRequest<{ decadeByValue: Decade | null }>(
     DECADE_BY_VALUE_QUERY,
     { value },
+    { decadeByValue: null },
   );
   return data.decadeByValue;
 }
