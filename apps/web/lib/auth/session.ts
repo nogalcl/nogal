@@ -4,6 +4,12 @@ import type { AuthPayload } from "@/lib/api/auth";
 
 const ACCESS_TOKEN_COOKIE = "nogal_access_token";
 const REFRESH_TOKEN_COOKIE = "nogal_refresh_token";
+// No lleva el token, solo indica "probablemente hay sesión" — a diferencia
+// de las de arriba, no es httpOnly a propósito: el cliente la lee de forma
+// síncrona (sin red) para decidir si vale la pena arrancar el polling de
+// useNavCounts. Ver ese hook — si esto no está, ni siquiera llama a
+// /api/nav-counts.
+const SESSION_HINT_COOKIE = "nogal_session";
 
 const baseCookieOptions = {
   httpOnly: true,
@@ -24,12 +30,19 @@ export async function setSession(payload: AuthPayload): Promise<void> {
     ...baseCookieOptions,
     expires: new Date(payload.refreshTokenExpiresAt),
   });
+
+  store.set(SESSION_HINT_COOKIE, "1", {
+    ...baseCookieOptions,
+    httpOnly: false,
+    expires: new Date(payload.refreshTokenExpiresAt),
+  });
 }
 
 export async function clearSession(): Promise<void> {
   const store = await cookies();
   store.delete(ACCESS_TOKEN_COOKIE);
   store.delete(REFRESH_TOKEN_COOKIE);
+  store.delete(SESSION_HINT_COOKIE);
 }
 
 export async function getAccessToken(): Promise<string | undefined> {
